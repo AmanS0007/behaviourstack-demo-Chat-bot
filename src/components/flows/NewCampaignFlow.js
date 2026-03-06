@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
-import { Home, CheckCircle, Trophy } from 'lucide-react';
+import { useAI } from '../../context/AIContext';
+import { Home, CheckCircle, Trophy, Download, ArrowRight } from 'lucide-react';
 import Step1_ProductInput from '../steps/Step1_ProductInput';
 import Step2_AudienceIntelligence from '../steps/Step2_AudienceIntelligence';
 import Step3_CreativeIntelligence from '../steps/Step3_CreativeIntelligence';
+import ChatPanel from '../chat/ChatPanel'; 
+import ParticleBackground from '../ParticleBackground'; 
 import '../../styles/PresentationFlow.css';
-
-// ESLint-friendly aliases for components with underscores
-const Step1ProductInput = Step1_ProductInput;
-const Step2AudienceIntelligence = Step2_AudienceIntelligence;
-const Step3CreativeIntelligence = Step3_CreativeIntelligence;
 
 function NewCampaignFlow({ onExit }) {
   const { productData, selectedAudiences, selectedCreative } = usePresentation();
+  const { updateContext, setIsChatOpen } = useAI();
   const [currentStep, setCurrentStep] = useState(1);
   const [showCompletion, setShowCompletion] = useState(false);
 
@@ -22,26 +21,66 @@ function NewCampaignFlow({ onExit }) {
     { num: 3, label: 'Creative', completed: !!selectedCreative }
   ];
 
+  // FIRST: Initialize context on flow entry
+  useEffect(() => {
+    console.log('🎯 New Campaign Flow - ENTRY');
+    updateContext({
+      currentFlow: 'new-campaign',
+      currentStep: 'product-input',
+      visibleComponents: {},
+      campaignData: {},
+      selectedItems: {},
+      availableActions: []
+    });
+    setIsChatOpen(true);
+  }, []); // Empty deps - only run on mount
+
+  // SECOND: Update context when step or data changes
+  useEffect(() => {
+    console.log('🎯 New Campaign - Step Update:', {
+      currentStep,
+      stepName: currentStep === 1 ? 'product-input' : 
+                currentStep === 2 ? 'audience-selection' : 
+                'creative-intelligence'
+    });
+
+    updateContext({
+      currentFlow: 'new-campaign',
+      currentStep: currentStep === 1 ? 'product-input' : 
+                   currentStep === 2 ? 'audience-selection' : 
+                   'creative-intelligence',
+      campaignData: {
+        product: productData,
+        audiences: selectedAudiences,
+        creative: selectedCreative
+      },
+      selectedItems: {
+        audiences: selectedAudiences
+      },
+      availableActions: [
+        'explain_recommendations',
+        'compare_options',
+        'suggest_alternatives'
+      ]
+    });
+  }, [currentStep, productData, selectedAudiences, selectedCreative, updateContext]);
+
   const handleStep3Complete = () => {
     setShowCompletion(true);
   };
 
   const renderStep = () => {
     switch (currentStep) {
-      case 1: return <Step1ProductInput nextStep={() => setCurrentStep(2)} />;
-      case 2: return <Step2AudienceIntelligence 
+      case 1: return <Step1_ProductInput nextStep={() => setCurrentStep(2)} />;
+      case 2: return <Step2_AudienceIntelligence 
         nextStep={() => setCurrentStep(3)} 
-        prevStep={() => setCurrentStep(1)}
-        totalSteps={3}
-        stepNumber={2}
+        prevStep={() => setCurrentStep(1)} 
       />;
-      case 3: return <Step3CreativeIntelligence 
+      case 3: return <Step3_CreativeIntelligence 
         prevStep={() => setCurrentStep(2)}
         nextStep={handleStep3Complete}
-        totalSteps={3}
-        stepNumber={3}
       />;
-      default: return <Step1ProductInput />;
+      default: return <Step1_ProductInput />;
     }
   };
 
@@ -59,7 +98,7 @@ function NewCampaignFlow({ onExit }) {
           </div>
         </div>
 
-        <div className="presentation-content">
+        <div className="presentation-content with-chat">
           <div className="step-container">
             <div className="completion-screen">
               <div className="completion-icon-wrap">
@@ -110,6 +149,8 @@ function NewCampaignFlow({ onExit }) {
             </div>
           </div>
         </div>
+
+        <ChatPanel />
       </div>
     );
   }
@@ -123,7 +164,6 @@ function NewCampaignFlow({ onExit }) {
           <span>Exit</span>
         </button>
 
-        {/* Progress Bar - MOVED TO CENTER */}
         <div className="progress-bar-wrapper">
           <div className="flow-title-wrapper">
             <h2 className="flow-title">New Campaign Strategy</h2>
@@ -147,9 +187,12 @@ function NewCampaignFlow({ onExit }) {
       </div>
 
       {/* Step Content */}
-      <div className="presentation-content">
+      <div className="presentation-content with-chat">
+        <ParticleBackground count={30} color="#667eea" opacity={0.08} />
         {renderStep()}
       </div>
+
+      <ChatPanel />
     </div>
   );
 }

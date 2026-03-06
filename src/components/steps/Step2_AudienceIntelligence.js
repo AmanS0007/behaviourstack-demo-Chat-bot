@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
+import { useAI } from '../../context/AIContext';
 import { ArrowRight, ArrowLeft, Brain, Users, TrendingUp, CheckCircle, ChevronDown, ChevronUp, Database, Info } from 'lucide-react';
-import { generateAudiences, generateExistingAudiences } from '../../utils/audienceGenerator';
+import { generateAudiences, generateExistingAudiences } from '../../utils/audienceGenerator'; // FIXED IMPORTS
 import '../../styles/Steps.css';
 
-function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrevStep, totalSteps = 5, stepNumber = 2 }) {
+function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrevStep }) {
   const {
     productData,
     selectedAudiences,
@@ -13,29 +14,55 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
     prevStep: contextPrevStep
   } = usePresentation();
 
-  const nextStep = propNextStep || contextNextStep;  // ADD THIS
-  const prevStep = propPrevStep || contextPrevStep;  // ADD THIS
-  
-  // ... rest of the component
+  const { updateContext } = useAI();
+
+  const nextStep = propNextStep || contextNextStep;
+  const prevStep = propPrevStep || contextPrevStep;
 
   const [discoveredAudiences, setDiscoveredAudiences] = useState([]);
   const [existingAudiences, setExistingAudiences] = useState([]);
   const [expandedAudience, setExpandedAudience] = useState(null);
   const [analyzing, setAnalyzing] = useState(true);
-  const [activeTab, setActiveTab] = useState('discovered'); // 'discovered' or 'existing'
+  const [activeTab, setActiveTab] = useState('discovered');
 
   useEffect(() => {
     // Simulate LCBM analysis
     setAnalyzing(true);
     setTimeout(() => {
-      const discovered = generateAudiences(productData);
-      const existing = generateExistingAudiences(productData);
+      const discovered = generateAudiences(productData); // FIXED
+      const existing = generateExistingAudiences(productData); // FIXED
       
       setDiscoveredAudiences(discovered);
       setExistingAudiences(existing);
       setAnalyzing(false);
     }, 1500);
   }, [productData]);
+
+  // ADD THIS: Update AI context whenever data changes
+  useEffect(() => {
+    const allAudiences = [...discoveredAudiences, ...existingAudiences];
+    
+    updateContext({
+      currentStep: 'audience-selection',
+      visibleComponents: {
+        audiences: allAudiences
+      },
+      selectedItems: {
+        audiences: selectedAudiences
+      },
+      campaignData: {
+        product: productData,
+        audiences: selectedAudiences
+      },
+      availableActions: [
+        'compare_audiences',
+        'explain_fit_score',
+        'recommend_best',
+        'show_overlap',
+        'explain_lcbm'
+      ]
+    });
+  }, [discoveredAudiences, existingAudiences, selectedAudiences, productData, updateContext]);
 
   const handleToggleAudience = (audienceId) => {
     if (selectedAudiences.includes(audienceId)) {
@@ -75,7 +102,7 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
   return (
     <div className="step-container">
       <div className="step-header">
-        <div className="step-badge">Step {stepNumber} of {totalSteps}</div>
+        <div className="step-badge">Step 2 of 3</div>
         <h1 className="step-title">Audience Intelligence & Discovery</h1>
         <p className="step-description">
           LCBM discovered {discoveredAudiences.length} new audiences and segmented
