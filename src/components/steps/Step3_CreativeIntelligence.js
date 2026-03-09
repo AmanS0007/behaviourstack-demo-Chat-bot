@@ -32,12 +32,10 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     prevStep: contextPrevStep
   } = usePresentation();
 
-  const { updateContext, sendAutoMessage } = useAI(); // NEW: Get AI functions
+  const { updateContext, sendAutoMessage } = useAI();
 
-  const nextStep = propNextStep || contextNextStep;  // ADD THIS
-  const prevStep = propPrevStep || contextPrevStep;  // ADD THIS
-
-  // ... rest of the component
+  const nextStep = propNextStep || contextNextStep;
+  const prevStep = propPrevStep || contextPrevStep;
 
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -45,7 +43,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
   const [comparisonVariants, setComparisonVariants] = useState([]);
   const [showComparisonVariants, setShowComparisonVariants] = useState(false);
 
-  // NEW: Update AI context when component mounts or data changes
+  // Update AI context when component mounts or data changes
   useEffect(() => {
     updateContext({
       currentStep: 'creative-intelligence',
@@ -72,7 +70,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     });
   }, [generatedCreatives, uploadedCreatives, selectedCreative, selectedAudiences, productData, creativeMode, updateContext]);
 
-  // NEW: Send auto-message when creatives are generated (Create mode)
+  // Send auto-message when creatives are generated (Create mode)
   useEffect(() => {
     if (generatedCreatives.length > 0 && creativeMode === 'create') {
       setTimeout(() => {
@@ -81,7 +79,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     }
   }, [generatedCreatives, creativeMode, sendAutoMessage]);
 
-  // NEW: Send auto-message when uploaded creatives are scored
+  // Send auto-message when uploaded creatives are scored
   useEffect(() => {
     if (uploadedCreatives.length > 0) {
       setTimeout(() => {
@@ -90,10 +88,9 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     }
   }, [uploadedCreatives, sendAutoMessage]);
 
-  // NEW: Send auto-message when comparison variants are generated
+  // Send auto-message when comparison variants are generated
   useEffect(() => {
     if (comparisonVariants.length > 0 && showComparisonVariants) {
-      // Update context with both uploaded and AI variants for comparison
       updateContext({
         currentStep: 'creative-intelligence',
         visibleComponents: {
@@ -130,18 +127,8 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
     setUploading(true);
 
-    // Simulate upload and scoring
     setTimeout(() => {
-      const newCreatives = files.map((file, idx) => ({
-        id: `uploaded_${idx}`,
-        name: file.name,
-        type: file.type.includes('video') ? 'VIDEO' : 'STATIC',
-        file: file,
-        preview: URL.createObjectURL(file)
-      }));
-
-      // Score them with LCBM
-      const scoredCreatives = scoreUploadedCreatives(newCreatives, selectedAudiences);
+      const scoredCreatives = scoreUploadedCreatives(files);
       setUploadedCreatives(scoredCreatives);
       setUploading(false);
     }, 1500);
@@ -213,7 +200,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
           <div className="selected-audiences-preview">
             <p className="preview-label">{selectedAudiences.length} audiences selected:</p>
             <div className="audience-chips">
-              {selectedAudiences.slice(0, 4).map((audId, idx) => (
+              {(selectedAudiences || []).slice(0, 4).map((audId, idx) => (
                 <div key={idx} className="audience-chip">
                   {audId.replace(/_/g, ' ')}
                 </div>
@@ -352,7 +339,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
             </div>
 
             <div className="creatives-grid-step3">
-              {uploadedCreatives
+              {(uploadedCreatives || [])
                 .sort((a, b) => b.lcbm_score - a.lcbm_score)
                 .map((creative) => {
                   const isSelected = selectedCreative === creative.id;
@@ -389,10 +376,10 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                       {/* Name */}
                       <h4 className="creative-name-step3">{creative.name}</h4>
 
-                      {/* Recommendation */}
+                      {/* Why High Performing */}
                       <div className="recommendation-box">
                         <Star className="rec-icon" />
-                        <p className="rec-text">{creative.recommendations}</p>
+                        <p className="rec-text">{creative.why_high_performing}</p>
                       </div>
 
                       {/* Predicted Performance */}
@@ -464,7 +451,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
               </div>
             )}
 
-            {/* AI variants (scored for your audiences) - full breakdown same as Generate section */}
+            {/* AI variants (scored for your audiences) */}
             {showComparisonVariants && comparisonVariants.length > 0 && (
               <div className="comparison-variants-section">
                 <h3 className="comparison-section-title">
@@ -472,7 +459,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                   AI variants (scored for your audiences)
                 </h3>
                 <div className="variants-grid">
-                  {comparisonVariants.map((variant) => {
+                  {(comparisonVariants || []).map((variant) => {
                     const isSelected = selectedCreative === variant.id;
                     const TypeIcon = typeIcons[variant.type] || Image;
 
@@ -494,35 +481,37 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                               Generated Visual Assets
                             </h5>
                             <div className="assets-images">
-                              {variant.assets.images.map((img) => (
+                              {(variant.assets.images || []).map((img) => (
                                 <div key={img.id} className="asset-img-wrap">
                                   <img src={img.url} alt={img.type} className="asset-img" />
                                   <span className="asset-label">{img.type}</span>
                                 </div>
                               ))}
                             </div>
-                            <div className="asset-video-wrap">
-                              <div className="video-thumbnail">
-                                <img src={variant.assets.video.url} alt="video" className="asset-img" />
-                                <div className="play-overlay">
-                                  <Play className="play-icon" />
+                            {variant.assets.video && (
+                              <div className="asset-video-wrap">
+                                <div className="video-thumbnail">
+                                  <img src={variant.assets.video.thumbnail} alt="video" className="asset-img" />
+                                  <div className="play-overlay">
+                                    <Play className="play-icon" />
+                                  </div>
+                                  <span className="video-duration">{variant.assets.video.duration}</span>
                                 </div>
-                                <span className="video-duration">{variant.assets.video.duration}</span>
+                                <span className="asset-label">Video Ad</span>
                               </div>
-                              <span className="asset-label">Video Ad</span>
-                            </div>
+                            )}
                             <div className="google-ads-section">
                               <h6 className="google-ads-title">
                                 <Layout className="google-ads-icon" />
                                 Google Ads Copy
                               </h6>
-                              {variant.assets.googleAds.map((ad) => (
-                                <div key={ad.id} className="google-ad-preview">
-                                  <div className="ad-headline">{ad.headline}</div>
-                                  <div className="ad-url">{ad.displayUrl}</div>
-                                  <div className="ad-description">{ad.description}</div>
+                              {variant.google_ad && (
+                                <div className="google-ad-preview">
+                                  <div className="ad-headline">{variant.google_ad.headline}</div>
+                                  <div className="ad-url">{variant.google_ad.displayUrl}</div>
+                                  <div className="ad-description">{variant.google_ad.description}</div>
                                 </div>
-                              ))}
+                              )}
                             </div>
                           </div>
                         )}
@@ -746,7 +735,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
         </div>
 
         <div className="variants-grid">
-          {generatedCreatives.map((variant) => {
+          {(generatedCreatives || []).map((variant) => {
             const isSelected = selectedCreative === variant.id;
             const TypeIcon = typeIcons[variant.type] || Image;
 
@@ -762,7 +751,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                   <div className="variant-score">{variant.lcbm_score}</div>
                 </div>
 
-                {/* NEW: Visual Assets Section */}
+                {/* Visual Assets Section */}
                 {variant.assets && (
                   <div className="variant-assets">
                     <h5 className="assets-title">
@@ -772,7 +761,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                     
                     {/* Images */}
                     <div className="assets-images">
-                      {variant.assets.images.map((img) => (
+                      {(variant.assets.images || []).map((img) => (
                         <div key={img.id} className="asset-img-wrap">
                           <img src={img.url} alt={img.type} className="asset-img" />
                           <span className="asset-label">{img.type}</span>
@@ -781,16 +770,18 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                     </div>
 
                     {/* Video */}
-                    <div className="asset-video-wrap">
-                      <div className="video-thumbnail">
-                        <img src={variant.assets.video.url} alt="video" className="asset-img" />
-                        <div className="play-overlay">
-                          <Play className="play-icon" />
+                    {variant.assets.video && (
+                      <div className="asset-video-wrap">
+                        <div className="video-thumbnail">
+                          <img src={variant.assets.video.thumbnail} alt="video" className="asset-img" />
+                          <div className="play-overlay">
+                            <Play className="play-icon" />
+                          </div>
+                          <span className="video-duration">{variant.assets.video.duration}</span>
                         </div>
-                        <span className="video-duration">{variant.assets.video.duration}</span>
+                        <span className="asset-label">Video Ad</span>
                       </div>
-                      <span className="asset-label">Video Ad</span>
-                    </div>
+                    )}
 
                     {/* Google Ads */}
                     <div className="google-ads-section">
@@ -798,13 +789,13 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                         <Layout className="google-ads-icon" />
                         Google Ads Copy
                       </h6>
-                      {variant.assets.googleAds.map((ad) => (
-                        <div key={ad.id} className="google-ad-preview">
-                          <div className="ad-headline">{ad.headline}</div>
-                          <div className="ad-url">{ad.displayUrl}</div>
-                          <div className="ad-description">{ad.description}</div>
+                      {variant.google_ad && (
+                        <div className="google-ad-preview">
+                          <div className="ad-headline">{variant.google_ad.headline}</div>
+                          <div className="ad-url">{variant.google_ad.displayUrl}</div>
+                          <div className="ad-description">{variant.google_ad.description}</div>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 )}
@@ -884,12 +875,6 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
           })}
         </div>
 
-        {/* Download All Button
-        <button className="download-all-btn" onClick={() => handleDownloadAll()}>
-          <Download className="btn-icon" />
-          Download All Generated Assets (ZIP)
-        </button> */}
-
         {/* Actions */}
         <div className="form-actions">
           <button className="btn-secondary" onClick={() => {
@@ -900,13 +885,13 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
             Regenerate
           </button>
           <button
-  className="btn-primary"
-  onClick={handleContinue}
-  disabled={!selectedCreative}
->
-  Complete Campaign Strategy
-  <ArrowRight className="btn-icon" />
-</button>
+            className="btn-primary"
+            onClick={handleContinue}
+            disabled={!selectedCreative}
+          >
+            Complete Campaign Strategy
+            <ArrowRight className="btn-icon" />
+          </button>
         </div>
       </div>
     );
