@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
 import { useAI } from '../../context/AIContext';
+import { AutoMessages } from '../../context/AIContext'; // NEW: Import AutoMessages
 import { ArrowRight, ArrowLeft, Brain, Users, TrendingUp, CheckCircle, ChevronDown, ChevronUp, Database, Info } from 'lucide-react';
-import { generateAudiences, generateExistingAudiences } from '../../utils/audienceGenerator'; // FIXED IMPORTS
+import { generateAudiences, generateExistingAudiences } from '../../utils/audienceGenerator';
 import '../../styles/Steps.css';
 
 function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrevStep }) {
@@ -14,7 +15,7 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
     prevStep: contextPrevStep
   } = usePresentation();
 
-  const { updateContext } = useAI();
+  const { updateContext, sendAutoMessage } = useAI(); // NEW: Added sendAutoMessage
 
   const nextStep = propNextStep || contextNextStep;
   const prevStep = propPrevStep || contextPrevStep;
@@ -29,8 +30,8 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
     // Simulate LCBM analysis
     setAnalyzing(true);
     setTimeout(() => {
-      const discovered = generateAudiences(productData); // FIXED
-      const existing = generateExistingAudiences(productData); // FIXED
+      const discovered = generateAudiences(productData);
+      const existing = generateExistingAudiences(productData);
       
       setDiscoveredAudiences(discovered);
       setExistingAudiences(existing);
@@ -38,7 +39,7 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
     }, 1500);
   }, [productData]);
 
-  // ADD THIS: Update AI context whenever data changes
+  // Update AI context whenever data changes
   useEffect(() => {
     const allAudiences = [...discoveredAudiences, ...existingAudiences];
     
@@ -63,6 +64,18 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
       ]
     });
   }, [discoveredAudiences, existingAudiences, selectedAudiences, productData, updateContext]);
+
+  // NEW: Send auto-message when audiences are selected/changed
+  useEffect(() => {
+    if (selectedAudiences.length > 0) {
+      // Use setTimeout to ensure context is updated first
+      setTimeout(() => {
+        // Use a dynamic key that changes with selection to allow updates
+        const messageKey = `audiences-selected-${selectedAudiences.length}-${selectedAudiences.join('-')}`;
+        sendAutoMessage(messageKey, AutoMessages.audiencesSelected);
+      }, 1500);
+    }
+  }, [selectedAudiences, sendAutoMessage]);
 
   const handleToggleAudience = (audienceId) => {
     if (selectedAudiences.includes(audienceId)) {

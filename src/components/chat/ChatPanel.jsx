@@ -10,18 +10,18 @@ function ChatPanel() {
     sendMessage, 
     isChatOpen, 
     setIsChatOpen,
-    getContext // Make sure this is here
+    getContext
   } = useAI();
   
   const [input, setInput] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [contextStep, setContextStep] = useState(''); // ADD THIS - track context changes
+  const [contextStep, setContextStep] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // ADD THIS: Watch for context changes and force suggestions update
+  // Watch for context changes and force suggestions update
   useEffect(() => {
     const context = getContext();
     if (context.currentStep !== contextStep) {
@@ -62,25 +62,23 @@ function ChatPanel() {
     }
   };
 
-  // UPDATED: Get suggestions based on current context
+  // Get suggestions based on current context
   const getSuggestedQuestions = () => {
     const context = getContext();
     const step = context.currentStep;
     
-    console.log('🎯 Getting suggestions for step:', step); // Debug log
-    
-    if (step === 'audience-selection') {
+    if (step === 'product-input') {
+      return [
+        "How do I use the templates?",
+        "Which channels should I select?",
+        // "What makes a good product description?"
+      ];
+    } else if (step === 'audience-selection') {
       return [
         "What's the difference between these audiences?",
         "Which audience should I prioritize?",
         "Explain the fit score",
         "How does LCBM work?"
-      ];
-    } else if (step === 'product-input') {
-      return [
-        "How do I use the templates?",
-        "Which channels should I select?",
-        "What makes a good product description?"
       ];
     } else if (step === 'creative-intelligence') {
       return [
@@ -105,7 +103,14 @@ function ChatPanel() {
         "Why is this happening?",
         "How do I fix this?",
         "Explain the KPI changes",
-        "How confident is this diagnosis?"
+        // "How confident is this diagnosis?"
+      ];
+    } else if (step === 'creative-recovery') {
+      return [
+        "Why did my creative stop working?",
+        "What makes a good recovery creative?",
+        "How are these variants different?",
+        "Which variant should I test first?"
       ];
     } else if (step === 'company-input') {
       return [
@@ -244,26 +249,24 @@ function ChatPanel() {
             )}
           </div>
 
-          {/* Suggested Questions - NOW UPDATES WITH contextStep */}
-          {messages.length <= 2 && (
-            <div className="suggested-questions" key={contextStep}>
-              <p className="suggestions-label">Try asking:</p>
-              <div className="suggestions-grid">
-                {suggestedQuestions.map((question, idx) => (
-                  <button
-                    key={idx}
-                    className="suggestion-chip"
-                    onClick={() => {
-                      setInput(question);
-                      inputRef.current?.focus();
-                    }}
-                  >
-                    {question}
-                  </button>
-                ))}
-              </div>
+          {/* Suggested Questions - ALWAYS VISIBLE */}
+          <div className="suggested-questions persistent" key={contextStep}>
+            <p className="suggestions-label">💬 Try asking:</p>
+            <div className="suggestions-grid">
+              {suggestedQuestions.map((question, idx) => (
+                <button
+                  key={idx}
+                  className="suggestion-chip"
+                  onClick={() => {
+                    setInput(question);
+                    inputRef.current?.focus();
+                  }}
+                >
+                  {question}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Input Area */}
           <div className="chat-input-wrapper">

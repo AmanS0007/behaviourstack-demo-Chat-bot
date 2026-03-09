@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
+import { useAI } from '../../context/AIContext';
+import { AutoMessages } from '../../context/AIContext';
 import {
   ArrowRight, ArrowLeft, Brain, Upload, Sparkles,
   CheckCircle, Image, Play, Layout, Zap, Star, Download
@@ -30,6 +32,8 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     prevStep: contextPrevStep
   } = usePresentation();
 
+  const { updateContext, sendAutoMessage } = useAI(); // NEW: Get AI functions
+
   const nextStep = propNextStep || contextNextStep;  // ADD THIS
   const prevStep = propPrevStep || contextPrevStep;  // ADD THIS
 
@@ -40,6 +44,75 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
   const [showAudiencePreview, setShowAudiencePreview] = useState(false);
   const [comparisonVariants, setComparisonVariants] = useState([]);
   const [showComparisonVariants, setShowComparisonVariants] = useState(false);
+
+  // NEW: Update AI context when component mounts or data changes
+  useEffect(() => {
+    updateContext({
+      currentStep: 'creative-intelligence',
+      visibleComponents: {
+        creatives: generatedCreatives.length > 0 ? generatedCreatives : uploadedCreatives,
+        mode: creativeMode
+      },
+      selectedItems: {
+        creative: selectedCreative,
+        audiences: selectedAudiences
+      },
+      campaignData: {
+        product: productData,
+        audiences: selectedAudiences,
+        creatives: generatedCreatives.length > 0 ? generatedCreatives : uploadedCreatives
+      },
+      availableActions: [
+        'explain_scores',
+        'compare_variants',
+        'recommend_best',
+        'explain_hooks',
+        'improve_creative'
+      ]
+    });
+  }, [generatedCreatives, uploadedCreatives, selectedCreative, selectedAudiences, productData, creativeMode, updateContext]);
+
+  // NEW: Send auto-message when creatives are generated (Create mode)
+  useEffect(() => {
+    if (generatedCreatives.length > 0 && creativeMode === 'create') {
+      setTimeout(() => {
+        sendAutoMessage('creatives-generated', AutoMessages.creativesGenerated);
+      }, 500);
+    }
+  }, [generatedCreatives, creativeMode, sendAutoMessage]);
+
+  // NEW: Send auto-message when uploaded creatives are scored
+  useEffect(() => {
+    if (uploadedCreatives.length > 0) {
+      setTimeout(() => {
+        sendAutoMessage('creatives-uploaded', AutoMessages.creativesUploaded);
+      }, 500);
+    }
+  }, [uploadedCreatives, sendAutoMessage]);
+
+  // NEW: Send auto-message when comparison variants are generated
+  useEffect(() => {
+    if (comparisonVariants.length > 0 && showComparisonVariants) {
+      // Update context with both uploaded and AI variants for comparison
+      updateContext({
+        currentStep: 'creative-intelligence',
+        visibleComponents: {
+          uploaded: uploadedCreatives,
+          aiVariants: comparisonVariants,
+          mode: 'comparison'
+        },
+        campaignData: {
+          product: productData,
+          audiences: selectedAudiences,
+          creatives: [...uploadedCreatives, ...comparisonVariants]
+        }
+      });
+      
+      setTimeout(() => {
+        sendAutoMessage('comparison-variants-generated', AutoMessages.comparisonVariantsGenerated);
+      }, 500);
+    }
+  }, [comparisonVariants, showComparisonVariants, uploadedCreatives, productData, selectedAudiences, updateContext, sendAutoMessage]);
 
   // Handle mode selection
   const handleSelectMode = (mode) => {

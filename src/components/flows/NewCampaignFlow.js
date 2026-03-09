@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
 import { useAI } from '../../context/AIContext';
-import { Home, CheckCircle, Trophy, Download, ArrowRight } from 'lucide-react';
+import { Home, CheckCircle, Trophy} from 'lucide-react';
 import Step1_ProductInput from '../steps/Step1_ProductInput';
 import Step2_AudienceIntelligence from '../steps/Step2_AudienceIntelligence';
 import Step3_CreativeIntelligence from '../steps/Step3_CreativeIntelligence';

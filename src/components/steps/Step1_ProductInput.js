@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { usePresentation } from '../../context/PresentationContext';
+import { useAI } from '../../context/AIContext'; // NEW: Import useAI
+import { AutoMessages } from '../../context/AIContext'; // NEW: Import AutoMessages
 import { ArrowRight, Package, DollarSign, Users, TrendingUp, Lightbulb, MapPin, CheckSquare, Square, Tv } from 'lucide-react';
 import '../../styles/Steps.css';
 
@@ -62,6 +64,7 @@ const exampleProducts = [
 
 function Step1_ProductInput({ nextStep: propNextStep }) {
   const { productData, setProductData, nextStep: contextNextStep } = usePresentation();
+  const { sendAutoMessage } = useAI(); // NEW: Get sendAutoMessage function
   const nextStep = propNextStep || contextNextStep;
 
   const [errors, setErrors] = useState({});
@@ -121,6 +124,11 @@ function Step1_ProductInput({ nextStep: propNextStep }) {
 
     // Save selected channels to productData before proceeding
     setProductData(prev => ({ ...prev, selectedChannels }));
+    
+    // NEW: Send auto-message about product input completion
+    sendAutoMessage('product-completed', AutoMessages.productInputCompleted);
+    
+    // Then proceed to next step
     nextStep();
   };
 
@@ -301,7 +309,7 @@ function Step1_ProductInput({ nextStep: propNextStep }) {
           </div>
         </div>
 
-        {/* NEW SECTION: Channel Selection */}
+        {/* Channel Selection */}
         <div className="form-section">
           <div className="form-section-header">
             <Tv className="section-icon" />
