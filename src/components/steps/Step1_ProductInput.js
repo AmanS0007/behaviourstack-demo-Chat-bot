@@ -35,6 +35,7 @@ const exampleProducts = [
     monthlySpend: '120000',
     category: 'Beverage',
     newProduct: 'RTD Cold Brew Cans',
+    website: 'https://www.emberroasts.com',
     targetRegions: 'US & Canada',
     selectedChannels: ['meta', 'google', 'tiktok', 'snapchat']
   },
@@ -46,6 +47,7 @@ const exampleProducts = [
     monthlySpend: '90000',
     category: 'Beauty',
     newProduct: 'Body Care Collection',
+    website: 'https://www.velabodycare.com',
     targetRegions: 'North America',
     selectedChannels: ['meta', 'google', 'pinterest', 'tiktok']
   },
@@ -57,6 +59,7 @@ const exampleProducts = [
     monthlySpend: '100000',
     category: 'Fitness',
     newProduct: 'Smart Jump Rope',
+    website: 'https://www.peakform.com',
     targetRegions: 'US only',
     selectedChannels: ['meta', 'google', 'tiktok', 'youtube']
   }
@@ -237,6 +240,16 @@ function Step1_ProductInput({ nextStep: propNextStep }) {
                 placeholder="e.g., RTD Cans, Body Care Line"
                 value={productData.newProduct}
                 onChange={e => handleChange('newProduct', e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Company Website</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g., https://www.peakform.com"
+                value={productData.website}
+                onChange={e => handleChange('website', e.target.value)}
               />
             </div>
           </div>

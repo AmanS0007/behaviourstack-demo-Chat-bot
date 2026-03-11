@@ -7,18 +7,21 @@
     flex-direction: column;
   }
   
-  /* Header */
+  /* Header - locked height to match chat panel top bar */
   .presentation-header {
     background: white;
     border-bottom: 1px solid #e0e0e0;
-    padding: 16px 32px;
+    height: 96px;
+    padding: 12px 32px;
+    padding-right: 420px; /* Match chat panel width so title centers in left bar */
     display: flex;
     align-items: center;
-    gap: 32px;
+    gap: 24px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     position: sticky;
     top: 0;
     z-index: 100;
+    flex-shrink: 0;
   }
   
   .home-button {
@@ -45,6 +48,45 @@
     width: 16px;
     height: 16px;
   }
+
+  /* Header left group - Exit + steps (NewCampaignFlow) */
+  .header-left-group {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+
+  /* Progress bar on left - horizontal layout */
+  .progress-bar-left {
+    flex: 0 0 auto;
+    max-width: none;
+    margin: 0;
+    gap: 16px;
+  }
+
+  .progress-step-inline {
+    flex: 0 0 auto;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .progress-step-inline::after {
+    display: none; /* No connecting line in inline layout */
+  }
+
+  .progress-step-inline .progress-dot {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .progress-step-inline .progress-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
   
   /* Progress Bar */
   .progress-bar {
@@ -62,14 +104,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     position: relative;
   }
   
   .progress-step::after {
     content: '';
     position: absolute;
-    top: 16px;
+    top: 14px;
     left: 50%;
     width: 100%;
     height: 2px;
@@ -86,15 +128,15 @@
   }
   
   .progress-dot {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 999px;
     background: #e0e0e0;
     color: #999;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     transition: all 0.3s ease;
     border: 2px solid white;
@@ -155,17 +197,23 @@
     }
   }
 
-  /* Flow Title in Header */
+  /* Flow Title in Header - centered in left bar */
 .flow-title-wrapper {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
+  min-width: 0;
 }
 
 .flow-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: #1a1a1a;
   margin: 0;
+  line-height: 1.2;
+  min-width: 280px; /* Consistent width so all titles align */
 }
 
 .check-icon {
@@ -1136,24 +1184,32 @@
   }
 }
 
-/* Progress Bar Wrapper - Centers everything */
+/* Progress Bar Wrapper - Centers everything, compact for fixed header */
 .progress-bar-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 8px;
+  min-height: 0;
 }
 
 .flow-title-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
 }
 
 .flow-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: #1a1a1a;
   margin: 0;
+  line-height: 1.2;
+  min-width: 280px;
 }
 
 .progress-bar {
@@ -1256,15 +1312,22 @@
 @media (max-width: 768px) {
   .presentation-header {
     flex-wrap: wrap;
+    height: auto;
+    min-height: 96px;
+    padding: 12px 24px;
   }
 
-  .progress-bar-wrapper {
+  .header-left-group {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .progress-bar-left {
     width: 100%;
-    order: 3;
   }
 
-  .home-button {
-    order: 1;
+  .flow-title {
+    min-width: 0;
   }
 }
 /* Layout adjustments for chat panel */
@@ -1274,6 +1337,10 @@
 }
 
 @media (max-width: 1024px) {
+  .presentation-header {
+    padding-right: 32px; /* Chat moves to bottom, no extra padding */
+  }
+
   .presentation-content.with-chat {
     margin-right: 0;
     margin-bottom: 50vh; /* Make room for bottom chat */

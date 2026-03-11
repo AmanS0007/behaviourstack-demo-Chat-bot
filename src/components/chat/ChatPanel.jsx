@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAI } from '../../context/AIContext';
-import { Send, Minimize2, Maximize2, X, Sparkles, Brain, ChevronDown } from 'lucide-react';
+import { Send, Sparkles, Brain, ChevronDown } from 'lucide-react';
 import './ChatPanel.css';
 
 function ChatPanel() {
@@ -9,12 +9,10 @@ function ChatPanel() {
     isTyping, 
     sendMessage, 
     isChatOpen, 
-    setIsChatOpen,
     getContext
   } = useAI();
   
   const [input, setInput] = useState('');
-  const [isMinimized, setIsMinimized] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [contextStep, setContextStep] = useState('');
   const [refreshKey, setRefreshKey] = useState(0); // Force refresh trigger
@@ -188,8 +186,8 @@ function ChatPanel() {
   if (!isChatOpen) return null;
 
   return (
-    <div className={`chat-panel ${isMinimized ? 'minimized' : ''}`}>
-      {/* Header */}
+    <div className="chat-panel">
+      {/* Header - matches main UI top bar */}
       <div className="chat-header">
         <div className="chat-header-left">
           <div className="ai-avatar breathing">
@@ -200,28 +198,9 @@ function ChatPanel() {
             <p className="chat-subtitle">Context-aware marketing expert</p>
           </div>
         </div>
-        <div className="chat-header-actions">
-          <button 
-            className="icon-btn"
-            onClick={() => setIsMinimized(!isMinimized)}
-            title={isMinimized ? "Expand" : "Minimize"}
-            aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
-          >
-            {isMinimized ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
-          </button>
-          <button 
-            className="icon-btn"
-            onClick={() => setIsChatOpen(false)}
-            title="Close chat"
-            aria-label="Close chat"
-          >
-            <X size={18} />
-          </button>
-        </div>
       </div>
 
-      {!isMinimized && (
-        <>
+      <>
           {/* Messages Container */}
           <div 
             className="chat-messages" 
@@ -331,8 +310,7 @@ function ChatPanel() {
               <Send size={18} />
             </button>
           </div>
-        </>
-      )}
+      </>
     </div>
   );
 }

@@ -439,10 +439,12 @@ function RegionalExpansionFlow({ onExit }) {
     <div className="presentation-flow">
       {/* Header */}
       <div className="presentation-header">
-        <button className="home-button" onClick={onExit}>
-          <Home className="icon" />
-          <span>Exit</span>
-        </button>
+        <div className="header-left-group">
+          <button className="home-button" onClick={onExit}>
+            <Home className="icon" />
+            <span>Exit</span>
+          </button>
+        </div>
         <div className="flow-title-wrapper">
           <h2 className="flow-title">Regional Expansion Intelligence</h2>
         </div>

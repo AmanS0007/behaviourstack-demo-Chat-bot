@@ -89,10 +89,12 @@ function NewCampaignFlow({ onExit }) {
     return (
       <div className="presentation-flow">
         <div className="presentation-header">
-          <button className="home-button" onClick={onExit}>
-            <Home className="icon" />
-            <span>Exit</span>
-          </button>
+          <div className="header-left-group">
+            <button className="home-button" onClick={onExit}>
+              <Home className="icon" />
+              <span>Exit</span>
+            </button>
+          </div>
           <div className="flow-title-wrapper">
             <h2 className="flow-title">Campaign Complete!</h2>
           </div>
@@ -159,21 +161,16 @@ function NewCampaignFlow({ onExit }) {
     <div className="presentation-flow">
       {/* Header */}
       <div className="presentation-header">
-        <button className="home-button" onClick={onExit}>
-          <Home className="icon" />
-          <span>Exit</span>
-        </button>
-
-        <div className="progress-bar-wrapper">
-          <div className="flow-title-wrapper">
-            <h2 className="flow-title">New Campaign Strategy</h2>
-          </div>
-
-          <div className="progress-bar">
+        <div className="header-left-group">
+          <button className="home-button" onClick={onExit}>
+            <Home className="icon" />
+            <span>Exit</span>
+          </button>
+          <div className="progress-bar progress-bar-left">
             {steps.map(step => (
               <div
                 key={step.num}
-                className={`progress-step ${currentStep >= step.num ? 'active' : ''} ${currentStep === step.num ? 'current' : ''}`}
+                className={`progress-step progress-step-inline ${currentStep >= step.num ? 'active' : ''} ${currentStep === step.num ? 'current' : ''}`}
                 onClick={() => step.completed && setCurrentStep(step.num)}
               >
                 <div className="progress-dot">
@@ -183,6 +180,9 @@ function NewCampaignFlow({ onExit }) {
               </div>
             ))}
           </div>
+        </div>
+        <div className="flow-title-wrapper">
+          <h2 className="flow-title">New Campaign Strategy</h2>
         </div>
       </div>
 
