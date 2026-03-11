@@ -77,9 +77,9 @@ function LandingPage({ onStart }) {
                 Upload running campaigns for LCBM diagnosis and optimization recommendations
               </p>
               <ul className="flow-steps">
-                <li>• Connect live campaigns</li>
-                <li>• AI performance diagnosis</li>
-                <li>• Recovery strategies</li>
+                <li>1. Connect live campaigns</li>
+                <li>2. AI performance diagnosis</li>
+                <li>3. Recovery strategies</li>
               </ul>
               <div className="flow-cta">
                 Debug Campaign
@@ -100,9 +100,9 @@ function LandingPage({ onStart }) {
                 Get market-specific recommendations for geographic expansion
               </p>
               <ul className="flow-steps">
-                <li>• Company overview input</li>
-                <li>• Market analysis</li>
-                <li>• Regional playbooks</li>
+                <li>1. Company overview input</li>
+                <li>2. Market analysis</li>
+                <li>3. Regional playbooks</li>
               </ul>
               <div className="flow-cta">
                 Explore Markets
@@ -131,7 +131,7 @@ function LandingPage({ onStart }) {
             <span>Transsuasion AI</span>
           </div>
         </div>
-        <p className="footer-copy-clean">© 2025 BehaviourStack Intelligence</p>
+        <p className="footer-copy-clean">© 2026 BehaviourStack Intelligence</p>
       </div>
     </div>
   );
