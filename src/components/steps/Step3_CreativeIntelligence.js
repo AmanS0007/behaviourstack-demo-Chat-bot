@@ -45,30 +45,55 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
   // Update AI context when component mounts or data changes
   useEffect(() => {
-    updateContext({
-      currentStep: 'creative-intelligence',
-      visibleComponents: {
-        creatives: generatedCreatives.length > 0 ? generatedCreatives : uploadedCreatives,
-        mode: creativeMode
-      },
-      selectedItems: {
-        creative: selectedCreative,
-        audiences: selectedAudiences
-      },
-      campaignData: {
-        product: productData,
-        audiences: selectedAudiences,
-        creatives: generatedCreatives.length > 0 ? generatedCreatives : uploadedCreatives
-      },
-      availableActions: [
-        'explain_scores',
-        'compare_variants',
-        'recommend_best',
-        'explain_hooks',
-        'improve_creative'
-      ]
-    });
+    // Only update to 'creative-intelligence' when variants actually exist
+    if (generatedCreatives.length > 0 || uploadedCreatives.length > 0) {
+      updateContext({
+        currentStep: 'creative-intelligence',
+        visibleComponents: {
+          creatives: generatedCreatives.length > 0 ? generatedCreatives : uploadedCreatives,
+          mode: creativeMode
+        },
+        selectedItems: {
+          creative: selectedCreative,
+          audiences: selectedAudiences
+        },
+        campaignData: {
+          product: productData,
+          audiences: selectedAudiences,
+          creatives: generatedCreatives.length > 0 ? generatedCreatives : uploadedCreatives
+        },
+        availableActions: [
+          'explain_scores',
+          'compare_variants',
+          'recommend_best',
+          'explain_hooks',
+          'improve_creative'
+        ]
+      });
+    }
   }, [generatedCreatives, uploadedCreatives, selectedCreative, selectedAudiences, productData, creativeMode, updateContext]);
+
+  // Set context for mode selection screen (before variants exist)
+  useEffect(() => {
+    if (!creativeMode) {
+      updateContext({
+        currentStep: 'creative-mode-selection',
+        visibleComponents: {
+          showingModeSelection: true
+        },
+        campaignData: {
+          product: productData,
+          audiences: selectedAudiences
+        },
+        availableActions: [
+          'explain_upload_vs_generate',
+          'explain_ai_generation',
+          'explain_file_formats',
+          'recommend_mode'
+        ]
+      });
+    }
+  }, [creativeMode, productData, selectedAudiences, updateContext]);
 
   // Send auto-message when creatives are generated (Create mode)
   useEffect(() => {
@@ -118,6 +143,62 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     if (mode === 'create') {
       setShowAudiencePreview(true);
     }
+  };
+
+  // Handle going back to Step 2 (Audience Selection)
+  const handleBackToAudiences = () => {
+    // EXPLICIT UPDATE: Set context back to audience-selection BEFORE navigating
+    updateContext({
+      currentStep: 'audience-selection',
+      visibleComponents: {
+        audiences: [] // Will be populated by Step 2
+      },
+      selectedItems: {
+        audiences: selectedAudiences
+      },
+      campaignData: {
+        product: productData,
+        audiences: selectedAudiences
+      },
+      availableActions: [
+        'compare_audiences',
+        'explain_fit_score',
+        'recommend_best',
+        'show_overlap',
+        'explain_lcbm'
+      ]
+    });
+    
+    console.log('✅ Context updated to audience-selection, navigating back to Step 2');
+    
+    // Then navigate back
+    prevStep();
+  };
+
+  // Handle changing mode (back to mode selection screen)
+  const handleChangeMode = () => {
+    // EXPLICIT UPDATE: Set context back to mode selection
+    updateContext({
+      currentStep: 'creative-mode-selection',
+      visibleComponents: {
+        showingModeSelection: true
+      },
+      campaignData: {
+        product: productData,
+        audiences: selectedAudiences
+      },
+      availableActions: [
+        'explain_upload_vs_generate',
+        'explain_ai_generation',
+        'explain_file_formats',
+        'recommend_mode'
+      ]
+    });
+    
+    console.log('✅ Context updated back to creative-mode-selection');
+    
+    // Reset mode
+    setCreativeMode(null);
   };
 
   // Handle file upload
@@ -263,7 +344,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
         {/* Back Button */}
         <div className="form-actions">
-          <button className="btn-secondary" onClick={prevStep}>
+          <button className="btn-secondary" onClick={handleBackToAudiences}>
             <ArrowLeft className="btn-icon" />
             Back to Audiences
           </button>
@@ -304,7 +385,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
             </label>
             <button
               className="change-mode-btn"
-              onClick={() => setCreativeMode(null)}
+              onClick={handleChangeMode}
             >
               ← Or generate AI variants instead
             </button>
@@ -592,7 +673,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
         {/* Actions */}
         {uploadedCreatives.length > 0 && (
           <div className="form-actions">
-            <button className="btn-secondary" onClick={() => setCreativeMode(null)}>
+            <button className="btn-secondary" onClick={handleChangeMode}>
               <ArrowLeft className="btn-icon" />
               Change Mode
             </button>
@@ -677,7 +758,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
         {/* Actions */}
         <div className="form-actions">
-          <button className="btn-secondary" onClick={() => setCreativeMode(null)}>
+          <button className="btn-secondary" onClick={handleChangeMode}>
             <ArrowLeft className="btn-icon" />
             Change Mode
           </button>

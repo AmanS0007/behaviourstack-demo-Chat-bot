@@ -766,6 +766,334 @@ Want to know more about a specific discovery?`;
   // ==========================================
   // CREATIVE INTELLIGENCE PAGE
   // ==========================================
+  // ==========================================
+  // CREATIVE MODE SELECTION (Before variants exist)
+  // ==========================================
+  if (context.currentStep === 'creative-mode-selection') {
+    const selectedAudienceCount = context.campaignData?.audiences?.length || 0;
+    const productName = context.campaignData?.product?.productName || 'your product';
+    
+    // Question 1: What's the difference between uploading and generating?
+    if (lowerMessage.includes('difference') || (lowerMessage.includes('upload') && lowerMessage.includes('generat'))) {
+      return `Great question! Here's the key difference:
+
+**Upload Existing Ads:**
+• You provide your own creative assets (images, videos)
+• LCBM scores them against your ${selectedAudienceCount} selected audience${selectedAudienceCount !== 1 ? 's' : ''}
+• Best for: Testing existing creatives or comparing what you already have
+• You'll get LCBM scores, performance predictions, and improvement recommendations
+
+**Generate AI Variants:**
+• AI creates 4 new creative concepts from scratch
+• Each variant includes visual assets, hooks, copy angles, and Google Ads
+• Optimized specifically for your selected audiences
+• Best for: Fresh ideas or when starting a new campaign
+
+**Which should you choose?**
+${selectedAudienceCount >= 3 
+  ? `Since you've selected ${selectedAudienceCount} audiences, AI generation can create variants optimized for each audience segment!` 
+  : "Upload if you have existing creatives to test, or generate for fresh AI-powered concepts."}
+
+**Pro tip:** You can do both! Upload your existing creatives, then click "See AI alternatives" to compare against AI-generated variants.`;
+    }
+    
+    // Question 2: How does AI generate variants?
+    if (lowerMessage.includes('how') && (lowerMessage.includes('generat') || lowerMessage.includes('work') || lowerMessage.includes('create'))) {
+      return `Here's how the AI generation works:
+
+**Step 1: Audience Analysis** 🧠
+I analyze your ${selectedAudienceCount} selected audience${selectedAudienceCount !== 1 ? 's' : ''} to understand:
+• Content preferences and affinities
+• Messaging tone that resonates
+• Decision triggers and pain points
+• Preferred formats (video, static, UGC)
+
+**Step 2: Creative Concept Generation** 🎨
+Based on those insights, I create 4 unique variants, each with:
+• A distinct hook and messaging angle
+• Visual direction (what the creative should look like)
+• Copy strategy (tone, benefits, CTAs)
+• Complete asset package (2 images, 1 video, Google Ads copy)
+
+**Step 3: LCBM Scoring** 📊
+Each variant gets scored (8.5-9.2 range) based on predicted performance with your audiences.
+
+**Time to generate:** ~2 seconds ⚡
+
+All variants are optimized for **${productName}** and your specific audience mix!
+
+Want to see it in action? Click "Generate AI Variants" and watch the magic happen! 🚀`;
+    }
+    
+    // Question 3: What file formats can I upload?
+    if (lowerMessage.includes('format') || lowerMessage.includes('file') || lowerMessage.includes('type')) {
+      return `You can upload the following creative formats:
+
+**Images:** 📸
+• PNG (recommended for graphics with transparency)
+• JPG/JPEG (recommended for photos)
+• Max file size: 10MB per image
+
+**Videos:** 🎥
+• MP4 (most compatible)
+• MOV (Apple devices)
+• WebM
+• Max file size: 50MB per video
+• Recommended length: 15-60 seconds
+
+**What happens after upload:**
+1. Your creatives get analyzed by LCBM
+2. Each gets scored (0-10) based on fit with your ${selectedAudienceCount} selected audience${selectedAudienceCount !== 1 ? 's' : ''}
+3. You'll see predicted performance metrics (CTR, engagement, conversion lift)
+4. Recommendations for improvement
+
+**Tip:** You can upload multiple creatives at once to compare them! Just select multiple files.
+
+Ready to upload? Click "Upload Existing Ads" to get started!`;
+    }
+    
+    // Question 4: Which option should I choose?
+    if ((lowerMessage.includes('which') || lowerMessage.includes('what')) && 
+        (lowerMessage.includes('choose') || lowerMessage.includes('recommend') || lowerMessage.includes('should') || lowerMessage.includes('better'))) {
+      
+      let recommendation = '';
+      
+      if (selectedAudienceCount >= 3) {
+        recommendation = `**I'd recommend: Generate AI Variants** 🚀
+
+Why? You've selected ${selectedAudienceCount} audiences with potentially different preferences. AI generation will create variants optimized for these specific audience segments, giving you high-performing creative concepts tailored to each group.`;
+      } else {
+        recommendation = `**Both options work great!**
+
+• **Upload** if you have existing creatives you want to test
+• **Generate** if you want fresh AI-powered concepts
+
+Since you have ${selectedAudienceCount} audience${selectedAudienceCount !== 1 ? 's' : ''} selected, either approach will give you LCBM scores and performance predictions.`;
+      }
+      
+      return `${recommendation}
+
+**You can also do both:**
+1. Upload your existing creatives first
+2. Get them scored
+3. Then click "See AI alternatives" to compare against AI-generated variants
+4. This shows you exactly how your current creatives stack up!
+
+**My advice:** If you're starting fresh or want new ideas → **Generate AI Variants**
+If you want to validate existing work → **Upload Existing Ads**
+
+What will it be? 😊`;
+    }
+  }
+  
+  // ==========================================
+  // CREATIVE INTELLIGENCE (After variants exist)
+  // ==========================================
+  if (context.currentStep === 'creative-intelligence') {
+    const creatives = context.visibleComponents?.creatives || [];
+    const selectedAudienceCount = context.campaignData?.audiences?.length || 0;
+    
+    // Question 1: Why did this variant score higher?
+    if (lowerMessage.includes('why') && (lowerMessage.includes('score') || lowerMessage.includes('higher') || lowerMessage.includes('better'))) {
+      if (creatives.length === 0) {
+        return "I don't see any variants generated yet. Once you generate or upload creatives, I can explain why certain variants score higher!";
+      }
+      
+      const sorted = [...creatives].sort((a, b) => b.lcbm_score - a.lcbm_score);
+      const top = sorted[0];
+      const topScore = top?.lcbm_score || 0;
+      
+      let response = `The highest-scoring variant is **"${top?.name}"** with a score of **${topScore}**.\n\n`;
+      
+      response += `**Why it scores higher:**\n\n`;
+      
+      response += `1. **Audience Alignment (${Math.round(topScore * 10)}%)**\n`;
+      if (top?.hook) {
+        response += `The hook "${top.hook}" resonates strongly with your selected audiences' content preferences.\n\n`;
+      } else {
+        response += `Strong alignment with audience preferences and behavioral signals.\n\n`;
+      }
+      
+      response += `2. **Visual Direction**\n`;
+      response += `${top?.visual_direction || 'The visual approach matches what performs well with your audience segments.'}\n\n`;
+      
+      response += `3. **Copy Strategy**\n`;
+      response += `${top?.copy_angle || 'The messaging angle addresses key decision triggers and pain points.'}\n\n`;
+      
+      response += `**Performance Edge:**\n`;
+      response += `• Expected CTR: ${top?.predicted_performance?.ctr || 'N/A'}\n`;
+      response += `• Engagement: ${top?.predicted_performance?.engagement || 'High'}\n`;
+      response += `• Conversion lift: ${top?.predicted_performance?.conversion_lift || 'N/A'}\n\n`;
+      
+      if (sorted.length > 1) {
+        response += `**Compared to "${sorted[1]?.name}" (${sorted[1]?.lcbm_score}):**\n`;
+        response += topScore > sorted[1]?.lcbm_score + 0.3 
+          ? `The difference comes down to stronger hook resonance and better audience-message fit.` 
+          : `The difference is slight - both are strong performers with different angles.`;
+      }
+      
+      return response;
+    }
+    
+    // Question 2: Which creative should I use?
+    if ((lowerMessage.includes('which') || lowerMessage.includes('what')) && 
+        (lowerMessage.includes('use') || lowerMessage.includes('choose') || lowerMessage.includes('best') || lowerMessage.includes('recommend'))) {
+      
+      if (creatives.length === 0) {
+        return "Generate or upload some creatives first, and I'll help you choose the best one!";
+      }
+      
+      const sorted = [...creatives].sort((a, b) => b.lcbm_score - a.lcbm_score);
+      const top = sorted[0];
+      const secondBest = sorted[1];
+      
+      let response = `**My recommendation: "${top?.name}"** 🏆\n\n`;
+      
+      response += `**Why this one?**\n`;
+      response += `• Highest LCBM score: **${top?.lcbm_score}**\n`;
+      response += `• ${top?.why_high_performing || 'Best audience fit and performance prediction'}\n\n`;
+      
+      response += `**Launch strategy:**\n`;
+      response += `1. **Primary creative:** Use "${top?.name}" for your main campaign\n`;
+      
+      if (secondBest) {
+        response += `2. **A/B test:** Run "${secondBest.name}" (${secondBest.lcbm_score}) as a variant to compare real-world performance\n`;
+      } else {
+        response += `2. **Monitor:** Track performance and iterate based on results\n`;
+      }
+      
+      response += `3. **Budget split:** Allocate 70% to top variant, 30% to test variant\n\n`;
+      
+      response += `**Expected results:**\n`;
+      response += `• CTR: ${top?.predicted_performance?.ctr || 'N/A'}\n`;
+      response += `• Engagement: ${top?.predicted_performance?.engagement || 'High'}\n`;
+      response += `• Conversion lift: ${top?.predicted_performance?.conversion_lift || 'N/A'}\n\n`;
+      
+      if (sorted.length >= 3) {
+        response += `**Alternative strategy:** If you're targeting multiple demographics, consider using "${sorted[0]?.name}" for one segment and "${sorted[1]?.name}" for another to maximize relevance!`;
+      }
+      
+      return response;
+    }
+    
+    // Question 3: How are these scores calculated?
+    if (lowerMessage.includes('how') && (lowerMessage.includes('calculat') || lowerMessage.includes('score') || lowerMessage.includes('work'))) {
+      const avgScore = creatives.length > 0 
+        ? (creatives.reduce((sum, c) => sum + (c.lcbm_score || 0), 0) / creatives.length).toFixed(1)
+        : 0;
+      
+      let response = `LCBM (Likelihood to Change Belief or Mindset) scores range from **0-10**`;
+      
+      if (creatives.length > 0) {
+        response += `, with your variants scoring **${avgScore} average**`;
+      }
+      
+      response += `.\n\n**How it's calculated:**\n\n`;
+      
+      response += `**1. Audience Preference Matching (40%)**\n`;
+      response += `• Analyzes your selected audiences' content affinities\n`;
+      response += `• Matches creative hooks and messaging to what resonates\n`;
+      response += `• Considers format preferences (video vs static vs UGC)\n\n`;
+      
+      response += `**2. Persuasion Architecture (30%)**\n`;
+      response += `• Hook strength and clarity\n`;
+      response += `• Message-market fit\n`;
+      response += `• CTA alignment with decision stage\n\n`;
+      
+      response += `**3. Visual-Message Coherence (20%)**\n`;
+      response += `• How well visual direction supports the message\n`;
+      response += `• Brand consistency\n`;
+      response += `• Attention-grabbing potential\n\n`;
+      
+      response += `**4. Predicted Performance Signals (10%)**\n`;
+      response += `• Historical data from similar creative approaches\n`;
+      response += `• Cross-referenced with your audience segments\n`;
+      response += `• Platform-specific optimization (Meta, Google, etc.)\n\n`;
+      
+      response += `**What the scores mean:**\n`;
+      response += `• **9.0-10:** Exceptional - Top 5% of creatives\n`;
+      response += `• **8.5-8.9:** Excellent - Strong performer\n`;
+      response += `• **8.0-8.4:** Very Good - Above average\n`;
+      response += `• **7.5-7.9:** Good - Solid performance expected\n`;
+      response += `• **Below 7.5:** Room for optimization\n\n`;
+      
+      if (creatives.length > 0) {
+        const minScore = Math.min(...creatives.map(c => c.lcbm_score || 0));
+        const maxScore = Math.max(...creatives.map(c => c.lcbm_score || 0));
+        const range = avgScore >= 8.5 ? 'excellent' : avgScore >= 8.0 ? 'very good' : 'good';
+        response += `**Your variants:** All scored ${minScore}-${maxScore}, which is in the **${range}** range! 🎉`;
+      }
+      
+      return response;
+    }
+    
+    // Question 4: Explain the hook strategy
+    if (lowerMessage.includes('hook') || lowerMessage.includes('strategy') || lowerMessage.includes('explain')) {
+      if (creatives.length === 0) {
+        return "Generate some variants first and I'll break down the hook strategy for each one!";
+      }
+      
+      const hooksExist = creatives.some(c => c.hook);
+      
+      if (!hooksExist) {
+        return "The current creatives don't have hooks defined. Generate AI variants to see strategic hook examples!";
+      }
+      
+      let response = `Let me break down the hook strategy for each variant:\n\n`;
+      
+      creatives.slice(0, 3).forEach((creative) => {
+        response += `**${creative.name}** (Score: ${creative.lcbm_score})\n`;
+        response += `Hook: "${creative.hook}"\n\n`;
+        
+        response += `Strategy: `;
+        const hookLower = creative.hook?.toLowerCase() || '';
+        
+        if (hookLower.includes('peak') || hookLower.includes('achieve')) {
+          response += 'Achievement-oriented hook targeting aspiration and results-driven mindset';
+        } else if (hookLower.includes('everyday') || hookLower.includes('fits')) {
+          response += 'Accessibility hook removing barriers and emphasizing ease of integration';
+        } else if (hookLower.includes('tech') || hookLower.includes('science')) {
+          response += 'Innovation hook positioning product as cutting-edge solution';
+        } else if (hookLower.includes('join') || hookLower.includes('community')) {
+          response += 'Social proof hook leveraging FOMO and community validation';
+        } else {
+          response += 'Value-driven hook emphasizing key product benefit';
+        }
+        
+        response += `\n\nWhy it works: ${creative.why_high_performing || 'Aligns with audience decision triggers'}\n\n`;
+        response += `---\n\n`;
+      });
+      
+      response += `**Hook best practices:**\n`;
+      response += `• **Clarity:** Immediately conveys the value proposition\n`;
+      response += `• **Relevance:** Speaks directly to audience pain points\n`;
+      response += `• **Differentiation:** Sets your product apart from competitors\n`;
+      response += `• **Action-oriented:** Implies transformation or benefit\n\n`;
+      
+      response += `Want me to explain the differences between specific hooks in more detail?`;
+      
+      return response;
+    }
+    
+    // Fallback for creative-intelligence
+    return `🎨 **Creative Scoring with LCBM + Transsuasion AI:**
+
+Your creative scores are based on alignment with your ${selectedAudienceCount} selected audience${selectedAudienceCount > 1 ? 's' : ''} preferences:
+
+**What We Analyze:**
+• Hook strength (matches content affinities)
+• Visual direction (aligned with consumption patterns)
+• Copy angle (resonates with behavioral motivations)
+• CTA effectiveness (matches decision-making patterns)
+
+**Score Ranges:**
+• **9.0+**: Exceptionally strong, high confidence
+• **8.5-8.9**: Strong performers, safe bets
+• **8.0-8.4**: Good baseline, room for optimization
+
+Want me to explain what makes a specific variant score higher?`;
+  }
+
   if (context.currentStep === 'creative-intelligence') {
     const selectedAudienceCount = context.campaignData?.audiences?.length || 0;
     
@@ -1528,7 +1856,7 @@ Just ask your question in plain English!`;
   } else if (context.currentStep === 'creative-intelligence') {
     exampleQuestions = [
       '"Why did this variant score higher?"',
-      '"Which creative should I use?"',
+      // '"Which creative should I use?"',
       '"How are these scores calculated?"'
     ];
   } else {

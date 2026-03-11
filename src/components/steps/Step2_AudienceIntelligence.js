@@ -73,7 +73,7 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
         // Use a dynamic key that changes with selection to allow updates
         const messageKey = `audiences-selected-${selectedAudiences.length}-${selectedAudiences.join('-')}`;
         sendAutoMessage(messageKey, AutoMessages.audiencesSelected);
-      }, 1500);
+      }, 300);
     }
   }, [selectedAudiences, sendAutoMessage]);
 
@@ -87,6 +87,27 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
   const handleContinue = () => {
     if (selectedAudiences.length > 0) {
+      // EXPLICIT UPDATE: Set context to creative-mode-selection BEFORE navigating
+      updateContext({
+        currentStep: 'creative-mode-selection',
+        visibleComponents: {
+          showingModeSelection: true
+        },
+        campaignData: {
+          product: productData,
+          audiences: selectedAudiences
+        },
+        availableActions: [
+          'explain_upload_vs_generate',
+          'explain_ai_generation',
+          'explain_file_formats',
+          'recommend_mode'
+        ]
+      });
+      
+      console.log('✅ Context updated to creative-mode-selection, navigating to Step 3');
+      
+      // Then navigate
       nextStep();
     }
   };

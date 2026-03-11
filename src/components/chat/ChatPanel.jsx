@@ -17,17 +17,23 @@ function ChatPanel() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [contextStep, setContextStep] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0); // Force refresh trigger
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // Watch for context changes and force suggestions update
+  // Watch for context changes and update contextStep state
   useEffect(() => {
-    const context = getContext();
-    if (context.currentStep !== contextStep) {
-      setContextStep(context.currentStep);
-      console.log('📌 Chat suggestions updated for:', context.currentStep);
-    }
+    const interval = setInterval(() => {
+      const context = getContext();
+      if (context.currentStep && context.currentStep !== contextStep) {
+        console.log('🔄 Context changed from', contextStep, 'to', context.currentStep);
+        setContextStep(context.currentStep);
+        setRefreshKey(prev => prev + 1); // Force re-render
+      }
+    }, 100); // Check every 100ms
+    
+    return () => clearInterval(interval);
   }, [getContext, contextStep]);
 
   // Auto-scroll to bottom when new messages arrive
@@ -62,10 +68,11 @@ function ChatPanel() {
     }
   };
 
-  // Get suggestions based on current context
+  // Get suggestions based on current step - Simple and direct!
   const getSuggestedQuestions = () => {
-    const context = getContext();
-    const step = context.currentStep;
+    const step = contextStep;
+    
+    console.log('🔄 Getting suggestions for step:', step);
     
     if (step === 'product-input') {
       return [
@@ -80,11 +87,19 @@ function ChatPanel() {
         "Explain the fit score",
         "How does LCBM work?"
       ];
+    } else if (step === 'creative-mode-selection') {
+      return [
+        "What's the difference between uploading and generating?",
+        "How does AI generate variants?",
+        "What file formats can I upload?",
+        "Which option should I choose?"
+      ];
     } else if (step === 'creative-intelligence') {
       return [
         "Why did this variant score higher?",
-        "Which creative should I use?",
-        "How are these scores calculated?"
+        // "Which creative should I use?",
+        "How are these scores calculated?",
+        "Explain the hook strategy"
       ];
     } else if (step === 'campaign-upload') {
       return [
@@ -103,7 +118,27 @@ function ChatPanel() {
         "Why is this happening?",
         "How do I fix this?",
         "Explain the KPI changes",
-        // "How confident is this diagnosis?"
+        "How confident is this diagnosis?"
+      ];
+    } else if (step === 'creative-recovery') {
+      return [
+        "Why did my creative stop working?",
+        "What makes a good recovery creative?",
+        "How are these variants different?",
+        "Which variant should I test first?"
+      ];
+    } else if (step === 'company-input') {
+      return [
+        "Which template should I use?",
+        "Why does industry matter?",
+        "Should I specify target geography?"
+      ];
+    } else if (step === 'diagnosis-results') {
+      return [
+        "Why is this happening?",
+        "How do I fix this?",
+        "Explain the KPI changes",
+        "How confident is this diagnosis?"
       ];
     } else if (step === 'creative-recovery') {
       return [
@@ -250,12 +285,12 @@ function ChatPanel() {
           </div>
 
           {/* Suggested Questions - ALWAYS VISIBLE */}
-          <div className="suggested-questions persistent" key={contextStep}>
+          <div className="suggested-questions persistent" key={`${contextStep}-${refreshKey}`}>
             <p className="suggestions-label">💬 Try asking:</p>
             <div className="suggestions-grid">
               {suggestedQuestions.map((question, idx) => (
                 <button
-                  key={idx}
+                  key={`${idx}-${refreshKey}`}
                   className="suggestion-chip"
                   onClick={() => {
                     setInput(question);
