@@ -539,6 +539,66 @@ This will take about 10-15 seconds. I'll diagnose exactly what's happening and g
     message += `I'll show you the top 3 markets with fit scores, ROI projections, and entry costs!`;
     
     return message;
+  },
+
+  // New Campaign - Final Summary (after creative selection)
+  campaignComplete: (context) => {
+    const product = context.campaignData?.product;
+    const audiences = context.campaignData?.audiences || [];
+    const selectedCreative = context.selectedItems?.creative;
+    const creatives = context.campaignData?.creatives || [];
+    
+    const creative = creatives.find(c => c.id === selectedCreative);
+    
+    let message = `🎉 **Campaign Strategy Complete!**\n\n`;
+    
+    message += `Here's your complete campaign setup:\n\n`;
+    
+    // Product Section
+    message += `**📦 Product:**\n`;
+    message += `• ${product?.productName || 'Your product'}\n`;
+    if (product?.category) {
+      message += `• Category: ${product.category}\n`;
+    }
+    if (product?.selectedChannels?.length > 0) {
+      message += `• Channels: ${product.selectedChannels.join(', ')}\n`;
+    }
+    message += `\n`;
+    
+    // Audiences Section
+    message += `**👥 Target Audiences (${audiences.length} selected):**\n`;
+    audiences.slice(0, 3).forEach((audId, idx) => {
+      const audName = audId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      message += `${idx + 1}. ${audName}\n`;
+    });
+    if (audiences.length > 3) {
+      message += `...and ${audiences.length - 3} more\n`;
+    }
+    message += `\n`;
+    
+    // Creative Section
+    if (creative) {
+      message += `**🎨 Selected Creative:**\n`;
+      message += `• Variant: **${creative.name}**\n`;
+      message += `• LCBM Score: **${creative.lcbm_score}**\n`;
+      message += `• Type: ${creative.type}\n`;
+      if (creative.predicted_performance) {
+        message += `• Predicted CTR: ${creative.predicted_performance.ctr}\n`;
+        message += `• Expected Conversion Lift: ${creative.predicted_performance.conversion_lift}\n`;
+      }
+      message += `\n`;
+    }
+    
+    // Next Steps
+    message += `**🚀 Next Steps:**\n`;
+    message += `1. Review your campaign setup\n`;
+    message += `2. Export creative assets and ad copy\n`;
+    message += `3. Set up campaigns in your ad platforms\n`;
+    message += `4. Launch and monitor performance\n\n`;
+    
+    message += `💬 **Questions?** Ask me anything about your campaign strategy, how to implement it, or what to expect!`;
+    
+    return message;
   }
 };
 
@@ -1835,6 +1895,175 @@ ${suggestions}
 
 Just ask your question in plain English!`;
   }
+
+  // ==========================================
+  // CAMPAIGN SUMMARY / COMPLETE
+  // ==========================================
+  if (context.currentStep === 'campaign-complete' || context.currentStep === 'campaign-summary') {
+    const product = context.campaignData?.product;
+    const audiences = context.campaignData?.audiences || [];
+    const selectedCreative = context.selectedItems?.creative;
+    const creatives = context.campaignData?.creatives || [];
+    const creative = creatives.find(c => c.id === selectedCreative);
+    
+    // How to implement / launch campaign
+    if (lowerMessage.includes('implement') || lowerMessage.includes('launch') || lowerMessage.includes('next') || lowerMessage.includes('deploy')) {
+      return `🚀 **How to Launch Your Campaign:**
+
+**Step 1: Export Assets** (10 min)
+• Download all creative assets (images, videos)
+• Copy Google Ads text variations
+• Save LCBM scores and recommendations
+
+**Step 2: Set Up in Ad Platforms** (30-45 min)
+${product?.selectedChannels?.includes('Meta') ? '• **Meta Ads Manager:** Create campaign, upload creatives, target your selected audiences\n' : ''}${product?.selectedChannels?.includes('Google Ads') ? '• **Google Ads:** Set up Search/Display campaigns with your ad copy\n' : ''}${product?.selectedChannels?.includes('TikTok') ? '• **TikTok Ads:** Upload video creatives, configure audience targeting\n' : ''}
+**Step 3: Launch Strategy**
+• Start with 70% budget on your top creative ("${creative?.name || 'highest scoring variant'}")
+• Allocate 30% to test variant
+• Run for minimum 7 days before optimizing
+• Monitor CTR, CPA, and conversion rate daily
+
+**Step 4: Optimization Timeline**
+• Days 1-3: Let algorithms learn, don't touch
+• Day 7: First performance review
+• Day 14: Scale winners, pause underperformers
+• Day 30: Full campaign optimization
+
+**Budget Recommendation:**
+With ${audiences.length} audiences, start with $${audiences.length * 50}/day minimum for statistical significance.
+
+Need help with any specific platform setup?`;
+    }
+    
+    // Why this creative won
+    if (creative && (lowerMessage.includes('why') || lowerMessage.includes('creative') || lowerMessage.includes('chose'))) {
+      return `**Why "${creative.name}" is Your Best Choice:**
+
+**LCBM Score: ${creative.lcbm_score}**
+This is in the ${creative.lcbm_score >= 9.0 ? 'exceptional' : creative.lcbm_score >= 8.5 ? 'excellent' : 'very good'} range.
+
+**Why It Works:**
+${creative.why_high_performing || 'Strong alignment with your audience preferences and proven persuasion patterns.'}
+
+**The Hook:**
+"${creative.hook}"
+→ This resonates with ${audiences.length} of your selected audiences' content preferences
+
+**Visual Strategy:**
+${creative.visual_direction || 'Optimized visual approach for your target demographics'}
+
+**Expected Performance:**
+• CTR: ${creative.predicted_performance?.ctr || 'Above industry average'}
+• Engagement: ${creative.predicted_performance?.engagement || 'High'}
+• Conversion Lift: ${creative.predicted_performance?.conversion_lift || 'Significant improvement expected'}
+
+**Compared to Alternatives:**
+This variant scored ${creative.lcbm_score >= 9.0 ? '0.3-0.5 points higher' : 'competitively'} against other options, indicating ${creative.lcbm_score >= 9.0 ? 'significantly stronger' : 'solid'} predicted performance.
+
+Want to understand the science behind the score?`;
+    }
+    
+    // Review campaign details
+    if (lowerMessage.includes('review') || lowerMessage.includes('summary') || lowerMessage.includes('show') || lowerMessage.includes('what did')) {
+      let response = `📋 **Campaign Strategy Summary:**\n\n`;
+      
+      response += `**Product:** ${product?.productName || 'Your product'}\n`;
+      response += `**Category:** ${product?.category || 'Not specified'}\n`;
+      response += `**Channels:** ${product?.selectedChannels?.join(', ') || 'Not specified'}\n\n`;
+      
+      response += `**Target Audiences (${audiences.length}):**\n`;
+      audiences.forEach((aud, idx) => {
+        response += `${idx + 1}. ${aud.replace(/_/g, ' ')}\n`;
+      });
+      response += `\n`;
+      
+      if (creative) {
+        response += `**Selected Creative:**\n`;
+        response += `• ${creative.name} (Score: ${creative.lcbm_score})\n`;
+        response += `• ${creative.type} format\n`;
+        response += `• Hook: "${creative.hook}"\n\n`;
+      }
+      
+      response += `**What Makes This Strategy Strong:**\n`;
+      response += `✓ ${audiences.length} distinct audience segments for maximum reach\n`;
+      response += `✓ Top-scoring creative variant (${creative?.lcbm_score || 'N/A'}+)\n`;
+      response += `✓ Multi-channel approach for comprehensive coverage\n`;
+      response += `✓ Data-driven targeting based on behavioral signals\n\n`;
+      
+      response += `Ready to implement? I can walk you through the launch process!`;
+      
+      return response;
+    }
+    
+    // Expected results / performance
+    if (lowerMessage.includes('expect') || lowerMessage.includes('result') || lowerMessage.includes('perform') || lowerMessage.includes('roi')) {
+      return `📊 **Expected Performance Benchmarks:**
+
+Based on your campaign configuration:
+
+**Creative Performance:**
+• CTR: ${creative?.predicted_performance?.ctr || '2.5-4.5%'} (${creative?.lcbm_score >= 9.0 ? 'Top 10%' : creative?.lcbm_score >= 8.5 ? 'Top 25%' : 'Above average'})
+• Engagement Rate: ${creative?.predicted_performance?.engagement || 'High'}
+• Conversion Lift: ${creative?.predicted_performance?.conversion_lift || '+25-40%'} vs standard creatives
+
+**Audience Reach:**
+With ${audiences.length} audiences, you're targeting ${audiences.length <= 2 ? '3-5M' : audiences.length <= 4 ? '8-12M' : '15-20M'} potential customers across selected channels.
+
+**Timeline to Results:**
+• **Week 1:** Learning phase, expect 60-70% of optimal performance
+• **Week 2:** Algorithms optimized, reaching 85-90% efficiency
+• **Week 3-4:** Full performance, ideal time to scale
+• **Month 2+:** Sustained results with ongoing optimization
+
+**Success Metrics to Track:**
+1. CTR (Click-Through Rate)
+2. CPA (Cost Per Acquisition)
+3. ROAS (Return on Ad Spend)
+4. Creative fatigue indicators (watch for CTR decline after 30 days)
+
+**When to Iterate:**
+If CTR drops below ${creative?.predicted_performance?.ctr ? (parseFloat(creative.predicted_performance.ctr) * 0.7).toFixed(1) + '%' : '2%'} after week 3, it's time to rotate to a new creative variant.
+
+The ${creative?.lcbm_score || 8.5}+ LCBM score indicates strong probability of success. Most campaigns with this score achieve or exceed projections.`;
+    }
+    
+    // Budget / spend recommendations  
+    if (lowerMessage.includes('budget') || lowerMessage.includes('spend') || lowerMessage.includes('cost') || lowerMessage.includes('how much')) {
+      const minDaily = audiences.length * 50;
+      const optimalDaily = audiences.length * 100;
+      
+      return `💰 **Budget Recommendations:**
+
+**Minimum to Start:**
+$${minDaily}/day ($${minDaily * 30}/month)
+→ This gives you statistical significance across ${audiences.length} audiences
+
+**Optimal Budget:**
+$${optimalDaily}/day ($${optimalDaily * 30}/month)  
+→ Faster learning, better optimization, quicker results
+
+**Budget Allocation:**
+• 70% ($${Math.round(optimalDaily * 0.7)}/day) → Top creative variant
+• 30% ($${Math.round(optimalDaily * 0.3)}/day) → Test variant
+
+**By Audience:**
+Roughly $${Math.round(optimalDaily / audiences.length)}/day per audience for optimal testing
+
+**ROI Timeline:**
+• Month 1: Learning phase, expect break-even or slight loss
+• Month 2: Positive ROI as campaigns optimize
+• Month 3+: 2-4x ROAS typical for well-optimized campaigns
+
+**Scaling Strategy:**
+Once you hit ${creative?.predicted_performance?.ctr || '3.5%'}+ CTR consistently for 7 days:
+→ Increase budget by 20-30% weekly
+→ Don't scale more than 50% per week (risks destabilizing performance)
+
+**Cost Benchmarks:**
+${product?.selectedChannels?.includes('Meta') ? '• Meta: $0.50-$2.00 CPC typical\n' : ''}${product?.selectedChannels?.includes('Google Ads') ? '• Google: $1.00-$3.00 CPC typical\n' : ''}${product?.selectedChannels?.includes('TikTok') ? '• TikTok: $0.30-$1.50 CPC typical\n' : ''}
+Start conservative, scale winners!`;
+    }
+  }
   
   // Default fallback
   const stepName = context.currentStep?.replace(/-/g, ' ') || 'this page';
@@ -1845,7 +2074,7 @@ Just ask your question in plain English!`;
     exampleQuestions = [
       '"How do I use the templates?"',
       '"Which channels should I select?"',
-      // '"What makes a good product description?"'
+      // '"What makes a good product description?"'  
     ];
   } else if (context.currentStep === 'audience-selection') {
     exampleQuestions = [
@@ -1856,7 +2085,7 @@ Just ask your question in plain English!`;
   } else if (context.currentStep === 'creative-intelligence') {
     exampleQuestions = [
       '"Why did this variant score higher?"',
-      // '"Which creative should I use?"',
+      '"Which creative should I use?"',
       '"How are these scores calculated?"'
     ];
   } else {

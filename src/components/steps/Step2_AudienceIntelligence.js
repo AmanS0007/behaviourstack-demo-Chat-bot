@@ -73,7 +73,7 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
         // Use a dynamic key that changes with selection to allow updates
         const messageKey = `audiences-selected-${selectedAudiences.length}-${selectedAudiences.join('-')}`;
         sendAutoMessage(messageKey, AutoMessages.audiencesSelected);
-      }, 300);
+      }, 1500);
     }
   }, [selectedAudiences, sendAutoMessage]);
 

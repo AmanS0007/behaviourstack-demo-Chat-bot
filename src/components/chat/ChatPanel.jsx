@@ -97,7 +97,7 @@ function ChatPanel() {
     } else if (step === 'creative-intelligence') {
       return [
         "Why did this variant score higher?",
-        // "Which creative should I use?",
+        "Which creative should I use?",
         "How are these scores calculated?",
         "Explain the hook strategy"
       ];
@@ -165,6 +165,13 @@ function ChatPanel() {
         "Which market should I choose?",
         "Explain the ROI projections",
         "What are the risks?"
+      ];
+    } else if (step === 'campaign-complete' || step === 'campaign-summary') {
+      return [
+        "Review my campaign summary",
+        "How do I implement this?",
+        "What results should I expect?",
+        "What's the recommended budget?"
       ];
     }
     

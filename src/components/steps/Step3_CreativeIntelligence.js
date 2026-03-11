@@ -244,6 +244,37 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
   const handleContinue = () => {
     if (selectedCreative) {
+      // EXPLICIT UPDATE: Set context to campaign-complete with full summary
+      updateContext({
+        currentStep: 'campaign-complete',
+        visibleComponents: {
+          summary: true
+        },
+        selectedItems: {
+          creative: selectedCreative,
+          audiences: selectedAudiences
+        },
+        campaignData: {
+          product: productData,
+          audiences: selectedAudiences,
+          creatives: generatedCreatives.length > 0 ? generatedCreatives : uploadedCreatives
+        },
+        availableActions: [
+          'review_summary',
+          'implementation_guide',
+          'expected_results',
+          'budget_recommendations'
+        ]
+      });
+      
+      // Send campaign summary auto-message
+      setTimeout(() => {
+        sendAutoMessage('campaign-complete', AutoMessages.campaignComplete);
+      }, 500);
+      
+      console.log('✅ Campaign complete! Summary sent to chat');
+      
+      // Then navigate to next step (summary/review page if it exists)
       nextStep();
     }
   };
