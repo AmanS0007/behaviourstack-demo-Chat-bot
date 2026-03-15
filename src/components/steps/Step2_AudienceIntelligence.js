@@ -338,7 +338,11 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
                 {/* Expanded Details */}
                 {isExpanded && (
                   <div className="audience-expanded-step2 fade-in">
-                    <div className="expanded-section-step2">
+                    <div className="expanded-section-step2 demographics-psychographics">
+                      <h5 className="expanded-title-step2">Demographics</h5>
+                      <p className="expanded-text">{audience.demographics}</p>
+                    </div>
+                    <div className="expanded-section-step2 demographics-psychographics">
                       <h5 className="expanded-title-step2">Psychographics</h5>
                       <p className="expanded-text">{audience.psychographics}</p>
                     </div>

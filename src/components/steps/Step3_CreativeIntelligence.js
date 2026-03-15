@@ -4,10 +4,11 @@ import { useAI } from '../../context/AIContext';
 import { AutoMessages } from '../../context/AIContext';
 import {
   ArrowRight, ArrowLeft, Brain, Upload, Sparkles,
-  CheckCircle, Image, Play, Layout, Zap, Star, Download
+  CheckCircle, Image, Play, Layout, Zap, Star, Download, AlertCircle
 } from 'lucide-react';
 import { generateCreativeVariants, scoreUploadedCreatives } from '../../utils/creativeGenerator';
 import '../../styles/Steps.css';
+import './Step3_CreativeIntelligence.css';
 
 const typeIcons = {
   VIDEO: Play,
@@ -43,6 +44,18 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
   const [comparisonVariants, setComparisonVariants] = useState([]);
   const [showComparisonVariants, setShowComparisonVariants] = useState(false);
 
+  // NEW: Tab-related states
+  const [activeAudienceTab, setActiveAudienceTab] = useState(null);
+  const [selectedVariantsByAudience, setSelectedVariantsByAudience] = useState({});
+  // Format: { audience_id: variant_id }
+
+  // Set active tab when creatives are generated
+  useEffect(() => {
+    if (generatedCreatives.length > 0 && selectedAudiences.length > 0 && !activeAudienceTab) {
+      setActiveAudienceTab(selectedAudiences[0]);
+    }
+  }, [generatedCreatives, selectedAudiences, activeAudienceTab]);
+
   // Update AI context when component mounts or data changes
   useEffect(() => {
     // Only update to 'creative-intelligence' when variants actually exist
@@ -51,11 +64,14 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
         currentStep: 'creative-intelligence',
         visibleComponents: {
           creatives: generatedCreatives.length > 0 ? generatedCreatives : uploadedCreatives,
-          mode: creativeMode
+          mode: creativeMode,
+          activeAudience: activeAudienceTab,
+          selectedVariants: selectedVariantsByAudience
         },
         selectedItems: {
           creative: selectedCreative,
-          audiences: selectedAudiences
+          audiences: selectedAudiences,
+          variantsByAudience: selectedVariantsByAudience
         },
         campaignData: {
           product: productData,
@@ -71,7 +87,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
         ]
       });
     }
-  }, [generatedCreatives, uploadedCreatives, selectedCreative, selectedAudiences, productData, creativeMode, updateContext]);
+  }, [generatedCreatives, uploadedCreatives, selectedCreative, selectedAudiences, productData, creativeMode, updateContext, activeAudienceTab, selectedVariantsByAudience]);
 
   // Set context for mode selection screen (before variants exist)
   useEffect(() => {
@@ -197,8 +213,10 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     
     console.log('✅ Context updated back to creative-mode-selection');
     
-    // Reset mode
+    // Reset mode and selections
     setCreativeMode(null);
+    setSelectedVariantsByAudience({});
+    setActiveAudienceTab(null);
   };
 
   // Handle file upload
@@ -215,15 +233,26 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     }, 1500);
   };
 
-  // Generate AI variants
+  // Generate AI variants - NOW GENERATES PER AUDIENCE
   const handleGenerateVariants = () => {
     setGenerating(true);
     setShowAudiencePreview(false);
 
     setTimeout(() => {
-      const variants = generateCreativeVariants(selectedAudiences, productData);
-      setGeneratedCreatives(variants);
+      // Generate 4 variants for EACH audience
+      const allVariants = selectedAudiences.flatMap(audienceId => {
+        const variants = generateCreativeVariants([audienceId], productData);
+        // Tag each variant with its target audience
+        return variants.map(v => ({ ...v, targetAudience: audienceId }));
+      });
+      
+      setGeneratedCreatives(allVariants);
       setGenerating(false);
+      
+      // Set first audience as active tab
+      if (selectedAudiences.length > 0) {
+        setActiveAudienceTab(selectedAudiences[0]);
+      }
     }, 2000);
   };
 
@@ -238,12 +267,37 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     }, 2000);
   };
 
+  // OLD selection handler (for upload mode)
   const handleSelectCreative = (creativeId) => {
     setSelectedCreative(creativeId);
   };
 
+  // NEW: Handle variant selection per audience
+  const handleSelectVariantForAudience = (audienceId, variantId) => {
+    setSelectedVariantsByAudience(prev => ({
+      ...prev,
+      [audienceId]: variantId
+    }));
+  };
+
+  // NEW: Check if all audiences have selected variants
+  const areAllAudiencesComplete = () => {
+    return selectedAudiences.every(audId => selectedVariantsByAudience[audId]);
+  };
+
+  // NEW: Get variants for specific audience
+  const getVariantsForAudience = (audienceId) => {
+    return generatedCreatives.filter(v => v.targetAudience === audienceId);
+  };
+
   const handleContinue = () => {
-    if (selectedCreative) {
+    // For tabbed mode, check if all audiences complete
+    if (creativeMode === 'create' && !areAllAudiencesComplete()) {
+      alert('Please select a variant for each audience before continuing.');
+      return;
+    }
+
+    if (selectedCreative || areAllAudiencesComplete()) {
       // EXPLICIT UPDATE: Set context to campaign-complete with full summary
       updateContext({
         currentStep: 'campaign-complete',
@@ -252,7 +306,8 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
         },
         selectedItems: {
           creative: selectedCreative,
-          audiences: selectedAudiences
+          audiences: selectedAudiences,
+          variantsByAudience: selectedVariantsByAudience
         },
         campaignData: {
           product: productData,
@@ -291,7 +346,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
   // Mode selection screen
   if (!creativeMode) {
     return (
-      <div className="step-container">
+      <div className="step-container step3-creative">
         <div className="step-header">
           <div className="step-badge">Step {stepNumber} of {totalSteps}</div>
           <h1 className="step-title">Creative Intelligence</h1>
@@ -301,74 +356,73 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
         </div>
 
         {/* Selected Audiences Context */}
-        <div className="model-output-box">
-          <div className="model-header">
-            <Brain className="model-icon" />
+        <div className="step3-context-box">
+          <div className="step3-context-header">
+            <Brain className="step3-context-icon" />
             <div>
-              <h3 className="model-title">Context from Step 2</h3>
-              <p className="model-subtitle">Selected Audiences</p>
+              <h3 className="step3-context-title">Context from Step 2</h3>
+              <p className="step3-context-subtitle">Selected Audiences</p>
             </div>
           </div>
-          <div className="selected-audiences-preview">
-            <p className="preview-label">{selectedAudiences.length} audiences selected:</p>
-            <div className="audience-chips">
+          <div className="step3-audiences-preview">
+            <p className="step3-preview-label">{selectedAudiences.length} audiences selected:</p>
+            <div className="step3-audience-chips">
               {(selectedAudiences || []).slice(0, 4).map((audId, idx) => (
-                <div key={idx} className="audience-chip">
+                <div key={idx} className="step3-audience-chip">
                   {audId.replace(/_/g, ' ')}
                 </div>
               ))}
               {selectedAudiences.length > 4 && (
-                <div className="audience-chip">+{selectedAudiences.length - 4} more</div>
+                <div className="step3-audience-chip">+{selectedAudiences.length - 4} more</div>
               )}
             </div>
           </div>
         </div>
 
         {/* Mode Selection */}
-        <div className="mode-selection-grid">
+        <div className="step3-mode-grid">
           <button
-            className="mode-card"
+            className="step3-mode-card"
             onClick={() => handleSelectMode('upload')}
           >
-            <div className="mode-icon-wrap upload">
-              <Upload className="mode-icon" />
+            <div className="step3-mode-icon-wrap upload">
+              <Upload className="step3-mode-icon" />
             </div>
-            <h3 className="mode-title">Upload Existing Ads</h3>
-            <p className="mode-desc">
+            <h3 className="step3-mode-title">Upload Existing Ads</h3>
+            <p className="step3-mode-desc">
               Upload your creative assets and LCBM will score them against your
               selected audiences
             </p>
-            <ul className="mode-benefits">
+            <ul className="step3-mode-benefits">
               <li>✓ Score existing creatives</li>
               <li>✓ Prioritize based on fit</li>
               <li>✓ Get improvement recommendations</li>
             </ul>
-            <div className="mode-cta">
+            <div className="step3-mode-cta">
               Upload & Score
-              <ArrowRight className="cta-icon" />
+              <ArrowRight className="step3-cta-icon" />
             </div>
           </button>
 
           <button
-            className="mode-card"
+            className="step3-mode-card"
             onClick={() => handleSelectMode('create')}
           >
-            <div className="mode-icon-wrap create">
-              <Sparkles className="mode-icon" />
+            <div className="step3-mode-icon-wrap create">
+              <Sparkles className="step3-mode-icon" />
             </div>
-            <h3 className="mode-title">Generate AI Variants</h3>
-            <p className="mode-desc">
-              AI will create 4 high-performing creative variants based on your
-              audience preferences
+            <h3 className="step3-mode-title">Generate AI Variants</h3>
+            <p className="step3-mode-desc">
+              AI will create 4 variants per audience optimized for their specific preferences
             </p>
-            <ul className="mode-benefits">
-              <li>✓ 4 AI-generated variants</li>
-              <li>✓ Optimized for your audiences</li>
+            <ul className="step3-mode-benefits">
+              <li>✓ 4 variants per audience ({selectedAudiences.length * 4} total)</li>
+              <li>✓ Audience-specific optimization</li>
               <li>✓ Complete creative briefs</li>
             </ul>
-            <div className="mode-cta">
+            <div className="step3-mode-cta">
               Generate Variants
-              <Sparkles className="cta-icon" />
+              <Sparkles className="step3-cta-icon" />
             </div>
           </button>
         </div>
@@ -384,10 +438,10 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     );
   }
 
-  // Upload Mode
+  // Upload Mode (unchanged from original)
   if (creativeMode === 'upload') {
     return (
-      <div className="step-container">
+      <div className="step-container step3-creative">
         <div className="step-header">
           <div className="step-badge">Step {stepNumber} of {totalSteps}</div>
           <h1 className="step-title">Upload & Score Creatives</h1>
@@ -398,13 +452,13 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
         {/* Upload Zone */}
         {uploadedCreatives.length === 0 && !uploading && (
-          <div className="upload-zone">
-            <Upload className="upload-icon" />
-            <h3 className="upload-title">Upload Your Creative Assets</h3>
-            <p className="upload-desc">
+          <div className="step3-upload-zone">
+            <Upload className="step3-upload-icon" />
+            <h3 className="step3-upload-title">Upload Your Creative Assets</h3>
+            <p className="step3-upload-desc">
               Images, videos, or ad mockups (PNG, JPG, MP4)
             </p>
-            <label className="upload-btn">
+            <label className="step3-upload-btn">
               <input
                 type="file"
                 multiple
@@ -415,7 +469,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
               Choose Files
             </label>
             <button
-              className="change-mode-btn"
+              className="step3-change-mode-btn"
               onClick={handleChangeMode}
             >
               ← Or generate AI variants instead
@@ -440,17 +494,17 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
         {/* Scored Creatives */}
         {uploadedCreatives.length > 0 && (
           <>
-            <div className="model-output-box">
-              <div className="model-header">
-                <Brain className="model-icon" />
+            <div className="step3-context-box">
+              <div className="step3-context-header">
+                <Brain className="step3-context-icon" />
                 <div>
-                  <h3 className="model-title">🤖 LCBM Scoring Complete</h3>
-                  <p className="model-subtitle">Creatives ranked by audience fit</p>
+                  <h3 className="step3-context-title">🤖 LCBM Scoring Complete</h3>
+                  <p className="step3-context-subtitle">Creatives ranked by audience fit</p>
                 </div>
               </div>
             </div>
 
-            <div className="creatives-grid-step3">
+            <div className="step3-creatives-grid">
               {(uploadedCreatives || [])
                 .sort((a, b) => b.lcbm_score - a.lcbm_score)
                 .map((creative) => {
@@ -460,59 +514,59 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                   return (
                     <div
                       key={creative.id}
-                      className={`creative-card-step3 ${isSelected ? 'selected' : ''}`}
+                      className={`step3-creative-card ${isSelected ? 'selected' : ''}`}
                     >
                       {/* Preview */}
-                      <div className="creative-preview">
+                      <div className="step3-creative-preview">
                         {creative.preview && (
                           <img
                             src={creative.preview}
                             alt={creative.name}
-                            className="preview-img"
+                            className="step3-preview-img"
                           />
                         )}
-                        <div className="creative-type-badge">
-                          <TypeIcon className="type-icon" />
+                        <div className="step3-creative-type-badge">
+                          <TypeIcon className="step3-type-icon" />
                           {creative.type}
                         </div>
                       </div>
 
                       {/* Score */}
-                      <div className="lcbm-score-display">
-                        <div className="score-value">
+                      <div className="step3-lcbm-score">
+                        <div className="step3-score-value">
                           {creative.lcbm_score}
                         </div>
-                        <div className="score-label">LCBM Score</div>
+                        <div className="step3-score-label">LCBM Score</div>
                       </div>
 
                       {/* Name */}
-                      <h4 className="creative-name-step3">{creative.name}</h4>
+                      <h4 className="step3-creative-name">{creative.name}</h4>
 
                       {/* Why High Performing */}
-                      <div className="recommendation-box">
-                        <Star className="rec-icon" />
-                        <p className="rec-text">{creative.why_high_performing}</p>
+                      <div className="step3-recommendation-box">
+                        <Star className="step3-rec-icon" />
+                        <p className="step3-rec-text">{creative.why_high_performing}</p>
                       </div>
 
                       {/* Predicted Performance */}
-                      <div className="performance-metrics">
-                        <div className="perf-metric">
-                          <span className="perf-label">CTR</span>
-                          <span className="perf-value">{creative.predicted_performance.ctr}</span>
+                      <div className="step3-performance-metrics">
+                        <div className="step3-perf-metric">
+                          <span className="step3-perf-label">CTR</span>
+                          <span className="step3-perf-value">{creative.predicted_performance.ctr}</span>
                         </div>
-                        <div className="perf-metric">
-                          <span className="perf-label">Engagement</span>
-                          <span className="perf-value">{creative.predicted_performance.engagement}</span>
+                        <div className="step3-perf-metric">
+                          <span className="step3-perf-label">Engagement</span>
+                          <span className="step3-perf-value">{creative.predicted_performance.engagement}</span>
                         </div>
-                        <div className="perf-metric">
-                          <span className="perf-label">Conv. Lift</span>
-                          <span className="perf-value green">{creative.predicted_performance.conversion_lift}</span>
+                        <div className="step3-perf-metric">
+                          <span className="step3-perf-label">Conv. Lift</span>
+                          <span className="step3-perf-value green">{creative.predicted_performance.conversion_lift}</span>
                         </div>
                       </div>
 
                       {/* Select Button */}
                       <button
-                        className={`select-creative-btn-step3 ${isSelected ? 'selected' : ''}`}
+                        className={`step3-select-creative-btn ${isSelected ? 'selected' : ''}`}
                         onClick={() => handleSelectCreative(creative.id)}
                       >
                         {isSelected ? (
@@ -529,7 +583,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
             </div>
 
             <button
-              className="upload-more-btn"
+              className="step3-upload-more-btn"
               onClick={() => {
                 setUploadedCreatives([]);
                 setComparisonVariants([]);
@@ -542,18 +596,18 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
             {/* Recommendation: Compare with AI-generated variants */}
             {uploadedCreatives.length > 0 && !showComparisonVariants && !generating && (
-              <div className="compare-recommendation-card">
-                <Sparkles className="compare-rec-icon" />
-                <div className="compare-rec-content">
-                  <h3 className="compare-rec-title">Optimized variants available!</h3>
-                  <p className="compare-rec-desc">
+              <div className="step3-compare-card">
+                <Sparkles className="step3-compare-icon" />
+                <div className="step3-compare-content">
+                  <h3 className="step3-compare-title">Optimized variants available!</h3>
+                  <p className="step3-compare-desc">
                     See how Transsuasion AI variants perform against your selected audiences.
                     We&apos;ll generate 4 variants and score them the same way, with full preview
                     and creative briefs.
                   </p>
                   <button
                     type="button"
-                    className="compare-rec-cta"
+                    className="step3-compare-cta"
                     onClick={handleGenerateForComparison}
                   >
                     <Sparkles className="btn-icon" />
@@ -565,12 +619,12 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
 
             {/* AI variants (scored for your audiences) */}
             {showComparisonVariants && comparisonVariants.length > 0 && (
-              <div className="comparison-variants-section">
-                <h3 className="comparison-section-title">
-                  <Sparkles className="inline-icon" />
+              <div className="step3-comparison-section">
+                <h3 className="step3-comparison-title">
+                  <Sparkles className="step3-inline-icon" />
                   AI variants (scored for your audiences)
                 </h3>
-                <div className="variants-grid">
+                <div className="step3-variants-grid">
                   {(comparisonVariants || []).map((variant) => {
                     const isSelected = selectedCreative === variant.id;
                     const TypeIcon = typeIcons[variant.type] || Image;
@@ -578,100 +632,100 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                     return (
                       <div
                         key={variant.id}
-                        className={`variant-card ${isSelected ? 'selected' : ''}`}
+                        className={`step3-variant-card ${isSelected ? 'selected' : ''}`}
                       >
-                        <div className="variant-header">
-                          <TypeIcon className="variant-type-icon" />
-                          <h4 className="variant-name">{variant.name}</h4>
-                          <div className="variant-score">{variant.lcbm_score}</div>
+                        <div className="step3-variant-header">
+                          <TypeIcon className="step3-variant-type-icon" />
+                          <h4 className="step3-variant-name">{variant.name}</h4>
+                          <div className="step3-variant-score">{variant.lcbm_score}</div>
                         </div>
 
                         {variant.assets && (
-                          <div className="variant-assets">
-                            <h5 className="assets-title">
-                              <Image className="assets-title-icon" />
+                          <div className="step3-variant-assets">
+                            <h5 className="step3-assets-title">
+                              <Image className="step3-assets-title-icon" />
                               Generated Visual Assets
                             </h5>
-                            <div className="assets-images">
+                            <div className="step3-assets-images">
                               {(variant.assets.images || []).map((img) => (
-                                <div key={img.id} className="asset-img-wrap">
-                                  <img src={img.url} alt={img.type} className="asset-img" />
-                                  <span className="asset-label">{img.type}</span>
+                                <div key={img.id} className="step3-asset-img-wrap">
+                                  <img src={img.url} alt={img.type} className="step3-asset-img" />
+                                  <span className="step3-asset-label">{img.type}</span>
                                 </div>
                               ))}
                             </div>
                             {variant.assets.video && (
-                              <div className="asset-video-wrap">
-                                <div className="video-thumbnail">
-                                  <img src={variant.assets.video.thumbnail} alt="video" className="asset-img" />
-                                  <div className="play-overlay">
-                                    <Play className="play-icon" />
+                              <div className="step3-asset-video-wrap">
+                                <div className="step3-video-thumbnail">
+                                  <img src={variant.assets.video.thumbnail} alt="video" className="step3-asset-img" />
+                                  <div className="step3-play-overlay">
+                                    <Play className="step3-play-icon" />
                                   </div>
-                                  <span className="video-duration">{variant.assets.video.duration}</span>
+                                  <span className="step3-video-duration">{variant.assets.video.duration}</span>
                                 </div>
-                                <span className="asset-label">Video Ad</span>
+                                <span className="step3-asset-label">Video Ad</span>
                               </div>
                             )}
-                            <div className="google-ads-section">
-                              <h6 className="google-ads-title">
-                                <Layout className="google-ads-icon" />
+                            <div className="step3-google-ads-section">
+                              <h6 className="step3-google-ads-title">
+                                <Layout className="step3-google-ads-icon" />
                                 Google Ads Copy
                               </h6>
                               {variant.google_ad && (
-                                <div className="google-ad-preview">
-                                  <div className="ad-headline">{variant.google_ad.headline}</div>
-                                  <div className="ad-url">{variant.google_ad.displayUrl}</div>
-                                  <div className="ad-description">{variant.google_ad.description}</div>
+                                <div className="step3-google-ad-preview">
+                                  <div className="step3-ad-headline">{variant.google_ad.headline}</div>
+                                  <div className="step3-ad-url">{variant.google_ad.displayUrl}</div>
+                                  <div className="step3-ad-description">{variant.google_ad.description}</div>
                                 </div>
                               )}
                             </div>
                           </div>
                         )}
 
-                        <div className="variant-hook">
-                          <span className="hook-label">Hook:</span>
-                          <p className="hook-text">&quot;{variant.hook}&quot;</p>
+                        <div className="step3-variant-hook">
+                          <span className="step3-hook-label">Hook:</span>
+                          <p className="step3-hook-text">&quot;{variant.hook}&quot;</p>
                         </div>
 
-                        <div className="variant-section">
-                          <h5 className="section-title-small">Visual Direction</h5>
-                          <p className="section-text">{variant.visual_direction}</p>
+                        <div className="step3-variant-section">
+                          <h5 className="step3-section-title-small">Visual Direction</h5>
+                          <p className="step3-section-text">{variant.visual_direction}</p>
                         </div>
 
-                        <div className="variant-section">
-                          <h5 className="section-title-small">Copy Angle</h5>
-                          <p className="section-text">{variant.copy_angle}</p>
+                        <div className="step3-variant-section">
+                          <h5 className="step3-section-title-small">Copy Angle</h5>
+                          <p className="step3-section-text">{variant.copy_angle}</p>
                         </div>
 
-                        <div className="variant-cta-display">
-                          <span className="cta-label">CTA:</span>
-                          <span className="cta-text">{variant.cta}</span>
+                        <div className="step3-variant-cta-display">
+                          <span className="step3-cta-label">CTA:</span>
+                          <span className="step3-cta-text">{variant.cta}</span>
                         </div>
 
-                        <div className="why-high-performing">
-                          <Star className="why-icon" />
-                          <p className="why-text">{variant.why_high_performing}</p>
+                        <div className="step3-why-high-performing">
+                          <Star className="step3-why-icon" />
+                          <p className="step3-why-text">{variant.why_high_performing}</p>
                         </div>
 
-                        <div className="performance-metrics">
-                          <div className="perf-metric">
-                            <span className="perf-label">CTR</span>
-                            <span className="perf-value">{variant.predicted_performance.ctr}</span>
+                        <div className="step3-performance-metrics">
+                          <div className="step3-perf-metric">
+                            <span className="step3-perf-label">CTR</span>
+                            <span className="step3-perf-value">{variant.predicted_performance.ctr}</span>
                           </div>
-                          <div className="perf-metric">
-                            <span className="perf-label">Engagement</span>
-                            <span className="perf-value">{variant.predicted_performance.engagement}</span>
+                          <div className="step3-perf-metric">
+                            <span className="step3-perf-label">Engagement</span>
+                            <span className="step3-perf-value">{variant.predicted_performance.engagement}</span>
                           </div>
-                          <div className="perf-metric">
-                            <span className="perf-label">Conv. Lift</span>
-                            <span className="perf-value green">{variant.predicted_performance.conversion_lift}</span>
+                          <div className="step3-perf-metric">
+                            <span className="step3-perf-label">Conv. Lift</span>
+                            <span className="step3-perf-value green">{variant.predicted_performance.conversion_lift}</span>
                           </div>
                         </div>
 
-                        <div className="variant-actions-row">
+                        <div className="step3-variant-actions-row">
                           <button
                             type="button"
-                            className={`select-variant-btn ${isSelected ? 'selected' : ''}`}
+                            className={`step3-select-variant-btn ${isSelected ? 'selected' : ''}`}
                             onClick={() => handleSelectCreative(variant.id)}
                           >
                             {isSelected ? (
@@ -684,7 +738,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                           </button>
                           <button
                             type="button"
-                            className="download-variant-btn"
+                            className="step3-download-variant-btn"
                             onClick={() => handleDownloadAll(variant)}
                             title={`Download ${variant.name} assets`}
                           >
@@ -725,77 +779,59 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
   // Create Mode - Show audience preview first
   if (creativeMode === 'create' && showAudiencePreview) {
     return (
-      <div className="step-container">
+      <div className="step-container step3-creative">
         <div className="step-header">
           <div className="step-badge">Step {stepNumber} of {totalSteps}</div>
-          <h1 className="step-title">Audience Preferences</h1>
+          <h1 className="step-title">Generating Variants for Your Audiences</h1>
           <p className="step-description">
-            Based on your selected audiences, here's what resonates with them
+            AI will create 4 unique creative variants optimized for each of your {selectedAudiences.length} selected audiences
           </p>
         </div>
 
-        {/* Audience Insights */}
-        <div className="audience-insights-card">
-          <h3 className="insights-title">
-            <Brain className="insights-icon" />
-            Key Insights from Your Audiences
-          </h3>
-
-          <div className="insights-grid">
-            <div className="insight-item">
-              <div className="insight-label">Top Content Affinity</div>
-              <div className="insight-value">Performance & Results Content</div>
-              <div className="insight-reason">
-                87% of your audiences engage heavily with achievement-oriented content
-              </div>
+        {/* Audience Preview Cards */}
+        <div className="step3-audience-preview-grid">
+          {selectedAudiences.map((audId, idx) => (
+            <div key={audId} className="step3-audience-preview-card">
+              <div className="step3-audience-number">{idx + 1}</div>
+              <h3>{audId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
+              <p>4 variants will be generated</p>
             </div>
-
-            <div className="insight-item">
-              <div className="insight-label">Preferred Messaging Tone</div>
-              <div className="insight-value">Direct, Data-Driven</div>
-              <div className="insight-reason">
-                Your audiences value quantifiable outcomes and clear value propositions
-              </div>
-            </div>
-
-            <div className="insight-item">
-              <div className="insight-label">Decision Triggers</div>
-              <div className="insight-value">Social Proof + Time Efficiency</div>
-              <div className="insight-reason">
-                Community validation combined with convenience drives conversions
-              </div>
-            </div>
-
-            <div className="insight-item">
-              <div className="insight-label">Format Preference</div>
-              <div className="insight-value">Short-Form Video & UGC</div>
-              <div className="insight-reason">
-                Higher engagement with authentic, bite-sized content (15-30s)
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
-        <div className="info-box">
-          <Sparkles className="info-icon" />
-          <div>
-            <p className="info-title">What happens next?</p>
-            <p className="info-text">
-              Transsuasion AI will generate 4 creative variants optimized for these
-              preferences, each with complete creative briefs and predicted performance.
-            </p>
-          </div>
+        {/* Generation Summary */}
+        <div className="step3-generation-summary">
+          <h3>What You'll Get:</h3>
+          <ul>
+            <li>{selectedAudiences.length * 4} total creative variants</li>
+            <li>4 variants per audience, each with unique hooks and messaging</li>
+            <li>Complete asset packages (images, video, Google Ads copy, Meta Ads copy, and more)</li>
+            <li>LCBM scores for predicted performance</li>
+          </ul>
         </div>
 
         {/* Actions */}
         <div className="form-actions">
           <button className="btn-secondary" onClick={handleChangeMode}>
             <ArrowLeft className="btn-icon" />
-            Change Mode
+            Cancel
           </button>
-          <button className="btn-primary" onClick={handleGenerateVariants}>
-            Generate 4 AI Variants
-            <Sparkles className="btn-icon" />
+          <button 
+            className="btn-primary"
+            onClick={handleGenerateVariants}
+            disabled={generating}
+          >
+            {generating ? (
+              <>
+                <div className="spinner-small"></div>
+                Generating {selectedAudiences.length * 4} Variants...
+              </>
+            ) : (
+              <>
+                <Sparkles className="btn-icon" />
+                Generate Variants
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -805,14 +841,14 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
   // Create Mode - Generating
   if (generating) {
     return (
-      <div className="step-container">
+      <div className="step-container step3-creative">
         <div className="analyzing-state">
           <div className="analyzing-icon">
             <Sparkles className="icon spinning" />
           </div>
           <h2 className="analyzing-title">Transsuasion AI Generating Variants...</h2>
           <p className="analyzing-desc">
-            Creating 4 high-performing creative concepts with visual assets
+            Creating {selectedAudiences.length * 4} high-performing creative concepts with visual assets
           </p>
           <div className="progress-bar-anim">
             <div className="progress-fill" />
@@ -822,175 +858,240 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
     );
   }
 
-  // Create Mode - Generated Variants
+  // Create Mode - Generated Variants WITH TABS
   if (creativeMode === 'create' && generatedCreatives.length > 0) {
+    const currentAudienceVariants = getVariantsForAudience(activeAudienceTab);
+    const selectedVariantForCurrentAudience = selectedVariantsByAudience[activeAudienceTab];
+
     return (
-      <div className="step-container">
+      <div className="step-container step3-creative">
         <div className="step-header">
           <div className="step-badge">Step {stepNumber} of {totalSteps}</div>
-          <h1 className="step-title">AI-Generated Creative Variants</h1>
+          <h1 className="step-title">Select Creative Variants</h1>
           <p className="step-description">
-            4 high-performing variants with complete visual assets
+            Choose one variant for each audience. Each tab shows 4 variants optimized for that specific audience.
           </p>
         </div>
 
-        <div className="model-output-box">
-          <div className="model-header">
-            <Sparkles className="model-icon" />
-            <div>
-              <h3 className="model-title">🤖 Transsuasion AI Generation Complete</h3>
-              <p className="model-subtitle">
-                All variants scored 8.5+ by LCBM with complete asset packages
-              </p>
-            </div>
+        {/* AUDIENCE TABS */}
+        <div className="step3-audience-tabs">
+          {selectedAudiences.map((audId) => {
+            const isSelected = selectedVariantsByAudience[audId];
+            const isActive = activeAudienceTab === audId;
+            
+            return (
+              <button
+                key={audId}
+                className={`step3-audience-tab ${isActive ? 'active' : ''} ${isSelected ? 'completed' : ''}`}
+                onClick={() => setActiveAudienceTab(audId)}
+              >
+                <span className="step3-tab-name">
+                  {audId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </span>
+                {isSelected ? (
+                  <CheckCircle size={18} className="step3-tab-icon check" />
+                ) : (
+                  <AlertCircle size={18} className="step3-tab-icon alert" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* TAB CONTENT */}
+        <div className="step3-tab-content">
+          <div className="step3-tab-header">
+            <h2>{activeAudienceTab?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h2>
+            {!selectedVariantForCurrentAudience && (
+              <div className="step3-selection-reminder">
+                <AlertCircle size={16} />
+                <span>Please select a variant for this audience</span>
+              </div>
+            )}
+          </div>
+
+          {/* VARIANTS GRID */}
+          <div className="step3-variants-grid">
+            {currentAudienceVariants.map((variant) => {
+              const isSelected = selectedVariantForCurrentAudience === variant.id;
+              const TypeIcon = typeIcons[variant.type] || Image;
+
+              return (
+                <div
+                  key={variant.id}
+                  className={`step3-variant-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleSelectVariantForAudience(activeAudienceTab, variant.id)}
+                >
+                  {isSelected && (
+                    <div className="step3-selected-badge">
+                      <CheckCircle size={20} />
+                      Selected
+                    </div>
+                  )}
+
+                  {/* Header */}
+                  <div className="step3-variant-header">
+                    <TypeIcon className="step3-variant-type-icon" />
+                    <h4 className="step3-variant-name">{variant.name}</h4>
+                    <div className="step3-variant-score">{variant.lcbm_score}</div>
+                  </div>
+
+                  {/* Visual Assets Section */}
+                  {variant.assets && (
+                    <div className="step3-variant-assets">
+                      <h5 className="step3-assets-title">
+                        <Image className="step3-assets-title-icon" />
+                        Generated Visual Assets
+                      </h5>
+                      
+                      {/* Images */}
+                      <div className="step3-assets-images">
+                        {(variant.assets.images || []).map((img) => (
+                          <div key={img.id} className="step3-asset-img-wrap">
+                            <img src={img.url} alt={img.type} className="step3-asset-img" />
+                            <span className="step3-asset-label">{img.type}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Video */}
+                      {variant.assets.video && (
+                        <div className="step3-asset-video-wrap">
+                          <div className="step3-video-thumbnail">
+                            <img src={variant.assets.video.thumbnail} alt="video" className="step3-asset-img" />
+                            <div className="step3-play-overlay">
+                              <Play className="step3-play-icon" />
+                            </div>
+                            <span className="step3-video-duration">{variant.assets.video.duration}</span>
+                          </div>
+                          <span className="step3-asset-label">Video Ad</span>
+                        </div>
+                      )}
+
+                      {/* Google Ads */}
+                      <div className="step3-google-ads-section">
+                        <h6 className="step3-google-ads-title">
+                          <Layout className="step3-google-ads-icon" />
+                          Google Ads Copy
+                        </h6>
+                        {variant.google_ad && (
+                          <div className="step3-google-ad-preview">
+                            <div className="step3-ad-headline">{variant.google_ad.headline}</div>
+                            <div className="step3-ad-url">{variant.google_ad.displayUrl}</div>
+                            <div className="step3-ad-description">{variant.google_ad.description}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hook */}
+                  <div className="step3-variant-hook">
+                    <span className="step3-hook-label">Hook:</span>
+                    <p className="step3-hook-text">"{variant.hook}"</p>
+                  </div>
+
+                  {/* Visual Direction */}
+                  <div className="step3-variant-section">
+                    <h5 className="step3-section-title-small">Visual Direction</h5>
+                    <p className="step3-section-text">{variant.visual_direction}</p>
+                  </div>
+
+                  {/* Copy Angle */}
+                  <div className="step3-variant-section">
+                    <h5 className="step3-section-title-small">Copy Angle</h5>
+                    <p className="step3-section-text">{variant.copy_angle}</p>
+                  </div>
+
+                  {/* CTA */}
+                  <div className="step3-variant-cta-display">
+                    <span className="step3-cta-label">CTA:</span>
+                    <span className="step3-cta-text">{variant.cta}</span>
+                  </div>
+
+                  {/* Why High Performing */}
+                  <div className="step3-why-high-performing">
+                    <Star className="step3-why-icon" />
+                    <p className="step3-why-text">{variant.why_high_performing}</p>
+                  </div>
+
+                  {/* Predicted Performance */}
+                  <div className="step3-performance-metrics">
+                    <div className="step3-perf-metric">
+                      <span className="step3-perf-label">CTR</span>
+                      <span className="step3-perf-value">{variant.predicted_performance.ctr}</span>
+                    </div>
+                    <div className="step3-perf-metric">
+                      <span className="step3-perf-label">Engagement</span>
+                      <span className="step3-perf-value">{variant.predicted_performance.engagement}</span>
+                    </div>
+                    <div className="step3-perf-metric">
+                      <span className="step3-perf-label">Conv. Lift</span>
+                      <span className="step3-perf-value green">{variant.predicted_performance.conversion_lift}</span>
+                    </div>
+                  </div>
+
+                  {/* Actions: Select + Download side by side */}
+                  <div className="step3-variant-actions-row">
+                    <button
+                      className={`step3-select-variant-btn ${isSelected ? 'selected' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectVariantForAudience(activeAudienceTab, variant.id);
+                      }}
+                    >
+                      {isSelected ? (
+                        <>
+                          <CheckCircle className="btn-icon" /> Selected
+                        </>
+                      ) : (
+                        'Select This Variant'
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="step3-download-variant-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownloadAll(variant);
+                      }}
+                      title={`Download ${variant.name} assets`}
+                    >
+                      <Download className="btn-icon" />
+                      Download
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="variants-grid">
-          {(generatedCreatives || []).map((variant) => {
-            const isSelected = selectedCreative === variant.id;
-            const TypeIcon = typeIcons[variant.type] || Image;
-
-            return (
-              <div
-                key={variant.id}
-                className={`variant-card ${isSelected ? 'selected' : ''}`}
-              >
-                {/* Header */}
-                <div className="variant-header">
-                  <TypeIcon className="variant-type-icon" />
-                  <h4 className="variant-name">{variant.name}</h4>
-                  <div className="variant-score">{variant.lcbm_score}</div>
-                </div>
-
-                {/* Visual Assets Section */}
-                {variant.assets && (
-                  <div className="variant-assets">
-                    <h5 className="assets-title">
-                      <Image className="assets-title-icon" />
-                      Generated Visual Assets
-                    </h5>
-                    
-                    {/* Images */}
-                    <div className="assets-images">
-                      {(variant.assets.images || []).map((img) => (
-                        <div key={img.id} className="asset-img-wrap">
-                          <img src={img.url} alt={img.type} className="asset-img" />
-                          <span className="asset-label">{img.type}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Video */}
-                    {variant.assets.video && (
-                      <div className="asset-video-wrap">
-                        <div className="video-thumbnail">
-                          <img src={variant.assets.video.thumbnail} alt="video" className="asset-img" />
-                          <div className="play-overlay">
-                            <Play className="play-icon" />
-                          </div>
-                          <span className="video-duration">{variant.assets.video.duration}</span>
-                        </div>
-                        <span className="asset-label">Video Ad</span>
-                      </div>
-                    )}
-
-                    {/* Google Ads */}
-                    <div className="google-ads-section">
-                      <h6 className="google-ads-title">
-                        <Layout className="google-ads-icon" />
-                        Google Ads Copy
-                      </h6>
-                      {variant.google_ad && (
-                        <div className="google-ad-preview">
-                          <div className="ad-headline">{variant.google_ad.headline}</div>
-                          <div className="ad-url">{variant.google_ad.displayUrl}</div>
-                          <div className="ad-description">{variant.google_ad.description}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Hook */}
-                <div className="variant-hook">
-                  <span className="hook-label">Hook:</span>
-                  <p className="hook-text">"{variant.hook}"</p>
-                </div>
-
-                {/* Visual Direction */}
-                <div className="variant-section">
-                  <h5 className="section-title-small">Visual Direction</h5>
-                  <p className="section-text">{variant.visual_direction}</p>
-                </div>
-
-                {/* Copy Angle */}
-                <div className="variant-section">
-                  <h5 className="section-title-small">Copy Angle</h5>
-                  <p className="section-text">{variant.copy_angle}</p>
-                </div>
-
-                {/* CTA */}
-                <div className="variant-cta-display">
-                  <span className="cta-label">CTA:</span>
-                  <span className="cta-text">{variant.cta}</span>
-                </div>
-
-                {/* Why High Performing */}
-                <div className="why-high-performing">
-                  <Star className="why-icon" />
-                  <p className="why-text">{variant.why_high_performing}</p>
-                </div>
-
-                {/* Predicted Performance */}
-                <div className="performance-metrics">
-                  <div className="perf-metric">
-                    <span className="perf-label">CTR</span>
-                    <span className="perf-value">{variant.predicted_performance.ctr}</span>
-                  </div>
-                  <div className="perf-metric">
-                    <span className="perf-label">Engagement</span>
-                    <span className="perf-value">{variant.predicted_performance.engagement}</span>
-                  </div>
-                  <div className="perf-metric">
-                    <span className="perf-label">Conv. Lift</span>
-                    <span className="perf-value green">{variant.predicted_performance.conversion_lift}</span>
-                  </div>
-                </div>
-
-                {/* Actions: Select + Download side by side */}
-                <div className="variant-actions-row">
-                  <button
-                    className={`select-variant-btn ${isSelected ? 'selected' : ''}`}
-                    onClick={() => handleSelectCreative(variant.id)}
-                  >
-                    {isSelected ? (
-                      <>
-                        <CheckCircle className="btn-icon" /> Selected
-                      </>
-                    ) : (
-                      'Select This Variant'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    className="download-variant-btn"
-                    onClick={() => handleDownloadAll(variant)}
-                    title={`Download ${variant.name} assets`}
-                  >
-                    <Download className="btn-icon" />
-                    Download
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        {/* SELECTION PROGRESS */}
+        <div className="step3-selection-progress">
+          <div className="step3-progress-header">
+            <h3>Selection Progress</h3>
+            <span>{Object.keys(selectedVariantsByAudience).length} of {selectedAudiences.length} audiences complete</span>
+          </div>
+          <div className="step3-progress-bar">
+            <div 
+              className="step3-progress-fill"
+              style={{ width: `${(Object.keys(selectedVariantsByAudience).length / selectedAudiences.length) * 100}%` }}
+            />
+          </div>
+          {!areAllAudiencesComplete() && (
+            <p className="step3-progress-hint">
+              Select a variant from each audience tab to continue
+            </p>
+          )}
         </div>
 
         {/* Actions */}
         <div className="form-actions">
           <button className="btn-secondary" onClick={() => {
             setGeneratedCreatives([]);
+            setSelectedVariantsByAudience({});
+            setActiveAudienceTab(null);
             setShowAudiencePreview(true);
           }}>
             <ArrowLeft className="btn-icon" />
@@ -999,7 +1100,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
           <button
             className="btn-primary"
             onClick={handleContinue}
-            disabled={!selectedCreative}
+            disabled={!areAllAudiencesComplete()}
           >
             Complete Campaign Strategy
             <ArrowRight className="btn-icon" />
