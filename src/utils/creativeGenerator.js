@@ -834,7 +834,45 @@ function detectCategory(productData) {
   return 'generic';
 }
 
-// Main generation function - UPDATED FOR AUDIENCE-SPECIFIC IMAGES
+// Audience-specific variant configurations
+const VARIANT_NAMES_BY_AUDIENCE = {
+  // Coffee audiences
+  specialty_coffee_connoisseurs: ['Origins Explorer', 'Craft Focus', 'Premium Blend', 'Roaster\'s Choice'],
+  morning_ritual_optimizers: ['Morning Perfect', 'Daily Essential', 'Ritual Ready', 'Sunrise Boost'],
+  artisan_food_explorers: ['Artisan Discovery', 'Craft Journey', 'Small Batch', 'Heritage Roast'],
+  sustainable_living_advocates: ['Green Choice', 'Eco Conscious', 'Planet First', 'Ethical Brew'],
+  local_coffee_shop_regulars: ['Local Love', 'Neighborhood Favorite', 'Community Brew', 'Corner Cafe'],
+  barista_equipment_enthusiasts: ['Pro Grade', 'Barista Tools', 'Precision Craft', 'Expert Equipment'],
+  subscription_coffee_members: ['Monthly Essentials', 'Subscriber Perks', 'Delivery Day', 'Fresh Every Month'],
+  premium_beverage_buyers: ['Luxury Pour', 'Premium Selection', 'Elite Taste', 'Signature Blend'],
+  
+  // Beauty audiences
+  clean_beauty_advocates: ['Clean Formula', 'Pure Ingredients', 'Natural Glow', 'Botanical Beauty'],
+  anti_aging_solution_seekers: ['Youthful Radiance', 'Age Defense', 'Timeless Skin', 'Renewal Results'],
+  skincare_routine_enthusiasts: ['Routine Mastery', 'Layering Pro', 'Daily Ritual', 'Step by Step'],
+  dermatologist_recommended_users: ['Clinical Trust', 'Derm Approved', 'Science Backed', 'Medical Grade'],
+  beauty_quiz_completers: ['Personalized Match', 'Your Formula', 'Custom Blend', 'Perfect Fit'],
+  premium_skincare_shoppers: ['Luxury Line', 'Premium Care', 'Elite Treatment', 'Prestige Beauty'],
+  sephora_ulta_shoppers: ['Retail Favorite', 'Beauty Insider', 'Must Have', 'Top Shelf'],
+  influencer_driven_beauty_buyers: ['Trending Now', 'Influencer Pick', 'Viral Favorite', 'Social Star'],
+  
+  // Fitness audiences
+  performance_tracking_athletes: ['Data Driven', 'Metrics Master', 'Performance Peak', 'Track & Win'],
+  home_workout_optimizers: ['Home Advantage', 'Space Smart', 'Living Room Fit', 'Compact Power'],
+  marathon_endurance_runners: ['Distance Ready', 'Endurance Edge', 'Long Run Pro', 'Marathon Mindset'],
+  fitness_tech_early_adopters: ['Tech Forward', 'Innovation First', 'Smart Fitness', 'Future Ready'],
+  product_page_visitors: ['Product Spotlight', 'Feature Focus', 'Detail Deep', 'Trust Builder'],
+  competitive_fitness_community: ['Team Spirit', 'Competition Ready', 'Victory Mindset', 'Community Power'],
+  gym_membership_holders: ['Gym Essential', 'Workout Ready', 'Strength Core', 'Training Partner'],
+  wearable_tech_upgraders: ['Upgrade Now', 'Next Gen', 'Switch Smart', 'Latest Tech']
+};
+
+// Helper to get random score in a range
+function randomScore(min, max) {
+  return parseFloat((min + Math.random() * (max - min)).toFixed(1));
+}
+
+// Main generation function - UPDATED FOR AUDIENCE-SPECIFIC IMAGES AND UNIQUE NAMES
 export function generateCreativeVariants(selectedAudiences, productData) {
   const audienceId = selectedAudiences[0]; // Get the audience being generated for
   const category = detectCategory(productData);
@@ -843,19 +881,22 @@ export function generateCreativeVariants(selectedAudiences, productData) {
   const audienceAssets = AUDIENCE_CREATIVE_ASSETS[audienceId] || DEFAULT_IMAGES;
   const googleAds = GOOGLE_ADS_TEMPLATES[category] || GOOGLE_ADS_TEMPLATES.fitness;
   
+  // Get audience-specific variant names or use defaults
+  const variantNames = VARIANT_NAMES_BY_AUDIENCE[audienceId] || ['Variant A', 'Variant B', 'Variant C', 'Variant D'];
+  
   const variants = [
     {
       id: `variant_${audienceId}_1`,
-      name: 'Peak Performance',
+      name: variantNames[0],
       type: 'CAROUSEL',
-      lcbm_score: 9.2,
+      lcbm_score: randomScore(8.8, 9.5), // Random score between 8.8-9.5
       targetAudience: audienceId,
       hook: "Transform your journey in 30 days",
       visual_direction: "Dynamic action shots showcasing achievement and premium quality",
       copy_angle: "Premium positioning with aspirational lifestyle focus",
       cta: "Start Free Trial",
       why_high_performing: "Combines strong social proof with urgency-driven messaging that resonates with high-intent audiences",
-      predicted_performance: { ctr: "4.2%", engagement: "High", conversion_lift: "+35%" },
+      predicted_performance: { ctr: `${randomScore(3.5, 4.8)}%`, engagement: "High", conversion_lift: `+${Math.round(randomScore(30, 45))}%` },
       assets: {
         images: audienceAssets.variant1.images,
         video: audienceAssets.variant1.video
@@ -864,16 +905,16 @@ export function generateCreativeVariants(selectedAudiences, productData) {
     },
     {
       id: `variant_${audienceId}_2`,
-      name: 'Everyday Excellence',
+      name: variantNames[1],
       type: 'STATIC',
-      lcbm_score: 8.8,
+      lcbm_score: randomScore(8.3, 9.0), // Random score between 8.3-9.0
       targetAudience: audienceId,
       hook: "Excellence that fits your life, not the other way around",
       visual_direction: "Approachable lifestyle imagery showing real people in authentic settings",
       copy_angle: "Relatability and accessibility over premium exclusivity",
       cta: "Get Started",
       why_high_performing: "Appeals to broader audience with inclusive messaging and removes barriers to entry",
-      predicted_performance: { ctr: "3.9%", engagement: "Medium-High", conversion_lift: "+28%" },
+      predicted_performance: { ctr: `${randomScore(3.2, 4.5)}%`, engagement: "Medium-High", conversion_lift: `+${Math.round(randomScore(25, 38))}%` },
       assets: {
         images: audienceAssets.variant2.images,
         video: audienceAssets.variant2.video
@@ -882,16 +923,16 @@ export function generateCreativeVariants(selectedAudiences, productData) {
     },
     {
       id: `variant_${audienceId}_3`,
-      name: 'Innovation Edge',
+      name: variantNames[2],
       type: 'VIDEO',
-      lcbm_score: 9.0,
+      lcbm_score: randomScore(8.5, 9.3), // Random score between 8.5-9.3
       targetAudience: audienceId,
       hook: "Where cutting-edge innovation meets peak results",
       visual_direction: "Innovation focus with technology highlights and premium aesthetics",
       copy_angle: "Technology and innovation leadership positioning",
       cta: "Learn More",
       why_high_performing: "Differentiates through innovation story while maintaining credibility with proof points",
-      predicted_performance: { ctr: "4.5%", engagement: "Very High", conversion_lift: "+42%" },
+      predicted_performance: { ctr: `${randomScore(3.8, 5.0)}%`, engagement: "Very High", conversion_lift: `+${Math.round(randomScore(35, 50))}%` },
       assets: {
         images: audienceAssets.variant3.images,
         video: audienceAssets.variant3.video
@@ -900,16 +941,16 @@ export function generateCreativeVariants(selectedAudiences, productData) {
     },
     {
       id: `variant_${audienceId}_4`,
-      name: 'Community Champion',
+      name: variantNames[3],
       type: 'UGC',
-      lcbm_score: 8.7,
+      lcbm_score: randomScore(8.0, 8.9), // Random score between 8.0-8.9
       targetAudience: audienceId,
       hook: "Join thousands already achieving their goals together",
       visual_direction: "Community and social proof with diverse representation",
       copy_angle: "Social proof and community-driven trust building",
       cta: "Join Now",
       why_high_performing: "Leverages bandwagon effect and FOMO while building trust through community validation",
-      predicted_performance: { ctr: "3.7%", engagement: "High", conversion_lift: "+31%" },
+      predicted_performance: { ctr: `${randomScore(3.0, 4.2)}%`, engagement: "High", conversion_lift: `+${Math.round(randomScore(22, 35))}%` },
       assets: {
         images: audienceAssets.variant4.images,
         video: audienceAssets.variant4.video
@@ -924,46 +965,30 @@ export function generateCreativeVariants(selectedAudiences, productData) {
 export default generateCreativeVariants;
 
 // Score uploaded creatives
-export function scoreUploadedCreatives(uploadedFiles) {
-  return uploadedFiles.map((file, index) => {
-    const baseScore = 7.5 + (Math.random() * 1.5);
-    
-    return {
-      id: `uploaded_${index}`,
-      name: file.name.split('.')[0] || `Uploaded Creative ${index + 1}`,
-      type: file.type.includes('video') ? 'VIDEO' : 'STATIC',
-      lcbm_score: parseFloat(baseScore.toFixed(1)),
-      file: file,
-      preview: URL.createObjectURL(file),
-      hook: "Your uploaded creative",
-      visual_direction: "User-provided creative asset",
-      copy_angle: "Original creative approach",
-      cta: "Learn More",
-      why_high_performing: `This creative scores ${parseFloat(baseScore.toFixed(1))} based on visual composition, brand alignment, and predicted audience engagement patterns.`,
-      predicted_performance: {
-        ctr: `${(2.5 + Math.random() * 2).toFixed(1)}%`,
-        engagement: baseScore >= 8.5 ? 'High' : baseScore >= 8.0 ? 'Medium-High' : 'Medium',
-        conversion_lift: `+${Math.round(20 + Math.random() * 25)}%`
-      },
-      assets: {
-        images: file.type.includes('image') ? [{
-          id: `img_${index}`,
-          url: URL.createObjectURL(file),
-          type: 'Uploaded Image'
-        }] : [],
-        video: file.type.includes('video') ? {
-          id: `vid_${index}`,
-          url: URL.createObjectURL(file),
-          thumbnail: URL.createObjectURL(file),
-          duration: '0:00'
-        } : null
-      },
-      google_ad: {
-        headline: "Promote Your Product Today",
-        description: "Connect with your ideal customers. Drive results that matter.",
-        cta: "Learn More",
-        displayUrl: "yourbrand.com/ads"
-      }
-    };
+// Score uploaded creatives PER AUDIENCE (just like AI variants)
+// Each uploaded file gets scored separately for each audience
+export function scoreUploadedCreatives(uploadedFiles, selectedAudiences) {
+  // Create variants for each uploaded file × each audience
+  return uploadedFiles.flatMap((file, fileIndex) => {
+    return selectedAudiences.map((audienceId) => {
+      // Random score per audience (each audience rates the upload differently)
+      const baseScore = 7.5 + (Math.random() * 1.8);
+      
+      return {
+        id: `uploaded_${fileIndex}_${audienceId}`,
+        name: file.name.split('.')[0] || `Uploaded Creative ${fileIndex + 1}`,
+        type: file.type.includes('video') ? 'VIDEO' : 'STATIC',
+        lcbm_score: parseFloat(baseScore.toFixed(1)),
+        targetAudience: audienceId, // CRITICAL: Tag with target audience
+        source: 'upload', // CRITICAL: Mark as user upload (not AI-generated)
+        file: file,
+        preview: URL.createObjectURL(file),
+        predicted_performance: {
+          ctr: `${(2.5 + Math.random() * 2).toFixed(1)}%`,
+          engagement: baseScore >= 8.5 ? 'High' : baseScore >= 8.0 ? 'Medium-High' : 'Medium',
+          conversion_lift: `+${Math.round(20 + Math.random() * 25)}%`
+        }
+      };
+    });
   });
 }

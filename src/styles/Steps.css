@@ -3717,9 +3717,19 @@
   color: #667eea;
 }
 
-.channel-emoji {
+.channel-emoji,
+.channel-logo {
   font-size: 20px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channel-logo img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .channel-name {
@@ -3768,4 +3778,17 @@
   background: #f0f4ff;
   border-radius: 6px;
   border: 1px solid #d4e0ff;
+}
+
+.channel-badge-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+}
+
+.channel-badge-logo img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
 }

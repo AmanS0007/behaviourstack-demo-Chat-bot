@@ -6,6 +6,17 @@ import { ArrowRight, ArrowLeft, Brain, Users, TrendingUp, CheckCircle, ChevronDo
 import { generateAudiences, generateExistingAudiences } from '../../utils/audienceGenerator';
 import '../../styles/Steps.css';
 
+// Brand logos (same as Step1)
+const CHANNEL_LOGOS = {
+  meta: '/images/channels/meta.svg',
+  google: '/images/channels/google.svg',
+  tiktok: '/images/channels/tiktok.svg',
+  linkedin: '/images/channels/linkedin.svg',
+  snapchat: '/images/channels/snapchat.svg',
+  pinterest: '/images/channels/pinterest.svg',
+  youtube: '/images/channels/youtube.svg'
+};
+
 function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrevStep }) {
   const {
     productData,
@@ -296,14 +307,12 @@ function Step2_AudienceIntelligence({ nextStep: propNextStep, prevStep: propPrev
                   {productData.selectedChannels?.length > 0 && (
                     <div className="audience-channels">
                       {productData.selectedChannels.slice(0, 3).map((ch) => (
-                        <span key={ch} className="channel-badge">
-                          {ch === 'meta' ? '📱' :
-                           ch === 'google' ? '🔍' :
-                           ch === 'tiktok' ? '🎵' :
-                           ch === 'linkedin' ? '💼' :
-                           ch === 'snapchat' ? '👻' :
-                           ch === 'pinterest' ? '📌' :
-                           ch === 'youtube' ? '▶️' : '📱'}
+                        <span key={ch} className="channel-badge channel-badge-logo">
+                          {CHANNEL_LOGOS[ch] ? (
+                            <img src={CHANNEL_LOGOS[ch]} alt="" aria-hidden />
+                          ) : (
+                            <img src={CHANNEL_LOGOS.meta} alt="" aria-hidden />
+                          )}
                         </span>
                       ))}
                       {productData.selectedChannels.length > 3 && (

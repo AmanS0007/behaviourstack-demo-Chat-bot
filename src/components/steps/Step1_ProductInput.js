@@ -17,13 +17,14 @@ const TARGET_REGION_OPTIONS = [
   { value: 'Global / International', label: 'Global / International' }
 ];
 
+// Real brand logos (local SVG files from Simple Icons)
 const AVAILABLE_CHANNELS = [
-  { id: 'meta', name: 'Meta (Facebook & Instagram)', icon: '📱' },
-  { id: 'google', name: 'Google Ads', icon: '🔍' },
-  { id: 'tiktok', name: 'TikTok Ads', icon: '🎵' },
-  { id: 'linkedin', name: 'LinkedIn Ads', icon: '💼' },
-  { id: 'snapchat', name: 'Snapchat Ads', icon: '👻' },
-  { id: 'pinterest', name: 'Pinterest Ads', icon: '📌' }
+  { id: 'meta', name: 'Meta (Facebook & Instagram)', logo: '/images/channels/meta.svg' },
+  { id: 'google', name: 'Google Ads', logo: '/images/channels/google.svg' },
+  { id: 'tiktok', name: 'TikTok Ads', logo: '/images/channels/tiktok.svg' },
+  { id: 'linkedin', name: 'LinkedIn Ads', logo: '/images/channels/linkedin.svg' },
+  { id: 'snapchat', name: 'Snapchat Ads', logo: '/images/channels/snapchat.svg' },
+  { id: 'pinterest', name: 'Pinterest Ads', logo: '/images/channels/pinterest.svg' }
 ];
 
 const exampleProducts = [
@@ -354,7 +355,9 @@ function Step1_ProductInput({ nextStep: propNextStep }) {
                         <Square className="check-icon" />
                       )}
                     </div>
-                    <span className="channel-emoji">{channel.icon}</span>
+                    <span className="channel-logo">
+                      <img src={channel.logo} alt="" aria-hidden />
+                    </span>
                     <span className="channel-name">{channel.name}</span>
                   </button>
                 );

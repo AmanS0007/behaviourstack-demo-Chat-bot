@@ -94,7 +94,7 @@ function ChatPanel() {
       ];
     } else if (step === 'creative-intelligence') {
       return [
-        "Why did this variant score higher?",
+        // "Why did this variant score higher?",
         "Which creative should I use?",
         "How are these scores calculated?",
         "Explain the hook strategy"
