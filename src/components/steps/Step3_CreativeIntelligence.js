@@ -786,7 +786,7 @@ function Step3_CreativeIntelligence({ nextStep: propNextStep, prevStep: propPrev
                           <div className="step3-assets-images">
                             {(variant.assets.images || []).map((img) => (
                               <div key={img.id} className="step3-asset-img-wrap">
-                                <img src={img.url} alt={img.type} className="step3-asset-img" />
+                                <img src={img.path || img.url} alt={img.type} className="step3-asset-img" />
                                 <span className="step3-asset-label">{img.type}</span>
                               </div>
                             ))}

@@ -560,7 +560,7 @@ function PerformanceDebugFlow({ onExit }) {
                             <div className="assets-images">
                               {variant.assets.images.slice(0, 2).map((img) => (
                                 <div key={img.id} className="asset-img-wrap">
-                                  <img src={img.url} alt={img.type} className="asset-img" />
+                                  <img src={img.path || img.url} alt={img.type} className="asset-img" />
                                   <span className="asset-label">{img.type}</span>
                                 </div>
                               ))}

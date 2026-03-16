@@ -11,14 +11,14 @@ const AUDIENCE_CREATIVE_ASSETS = {
   specialty_coffee_connoisseurs: {
     variant1: {
       images: [
-        { id: 'hero1', url: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=1200&h=800&fit=crop&q=80', type: 'Hero Image' },
-        { id: 'product1', url: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&h=600&fit=crop&q=80', type: 'Product' }
+        { id: 'hero1', path: '/variant_image/coffee_bean.png', type: 'Hero Image' },
+        { id: 'product1', url: 'https://i.ibb.co/Vpv0P8kK/Gemini-Generated-Image-2hmp9i2hmp9i2hmp.png', type: 'Product' }
       ],
       video: { thumbnail: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=600&fit=crop&q=80', duration: '0:20' }
     },
     variant2: {
       images: [
-        { id: 'hero2', url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1200&h=800&fit=crop&q=80', type: 'Hero Image' },
+        { id: 'hero2', url: 'https://i.ibb.co/3ySMHshw/Gemini-Generated-Image-wazoupwazoupwazo.png', type: 'Hero Image' },
         { id: 'lifestyle2', url: 'https://images.unsplash.com/photo-1516450137517-162bfbeb8dba?w=800&h=600&fit=crop&q=80', type: 'Lifestyle' }
       ],
       video: { thumbnail: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&h=600&fit=crop&q=80', duration: '0:25' }
